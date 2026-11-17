@@ -1,0 +1,4343 @@
+#usda 1.0
+(
+    defaultPrim = "World"
+    endTimeCode = 1000000
+    metersPerUnit = 1
+    startTimeCode = 0
+    timeCodesPerSecond = 60
+    upAxis = "Z"
+)
+
+def "Render" (
+    hide_in_stage_window = true
+    no_delete = true
+)
+{
+    def "OmniverseKit"
+    {
+        def "HydraTextures" (
+            hide_in_stage_window = true
+            no_delete = true
+        )
+        {
+            def RenderProduct "omni_kit_widget_viewport_ViewportTexture_0" (
+                prepend apiSchemas = ["OmniRtxSettingsCommonAdvancedAPI_1", "OmniRtxSettingsRtAdvancedAPI_1", "OmniRtxSettingsPtAdvancedAPI_1", "OmniRtxSettingsParticleFieldAPI_1", "OmniRtxPostColorGradingAPI_1", "OmniRtxPostChromaticAberrationAPI_1", "OmniRtxPostBloomPhysicalAPI_1", "OmniRtxPostMatteObjectAPI_1", "OmniRtxPostCompositingAPI_1", "OmniRtxPostDofAPI_1", "OmniRtxPostMotionBlurAPI_1", "OmniRtxPostTvNoiseAPI_1", "OmniRtxPostTonemapIrayReinhardAPI_1", "OmniRtxPostDebugSettingsAPI_1", "OmniRtxDebugSettingsAPI_1"]
+                hide_in_stage_window = true
+                no_delete = true
+            )
+            {
+                rel camera = </OmniverseKit_Persp>
+                token omni:rtx:ambientOcclusion:denoiserMode = "none"
+                token omni:rtx:background:source:texture:textureMode = "repeatMirrored"
+                token omni:rtx:background:source:type = "domeLight"
+                bool omni:rtx:debug:view:pixelDebug:enableFixedTextPos = 1
+                token omni:rtx:directLighting:sampledLighting:denoisingTechnique = "None"
+                bool omni:rtx:dlss:frameGeneration = 0
+                bool omni:rtx:indirectDiffuse:denoiser:enabled = 0
+                bool omni:rtx:material:db:syncLoads = 1
+                token omni:rtx:post:dlss:execMode = "performance"
+                bool omni:rtx:post:registeredCompositing:invertColorCorrection = 1
+                bool omni:rtx:post:registeredCompositing:invertToneMap = 1
+                bool omni:rtx:pt:adaptiveSampling:filterError = 0
+                uint omni:rtx:pt:adaptiveSampling:fixedSppIterations = 2
+                int omni:rtx:pt:clampSpp = 64
+                uint omni:rtx:pt:limits:maxBounces = 3
+                uint omni:rtx:pt:limits:maxGlossyBounces = 3
+                uint omni:rtx:pt:maxSamplesPerLaunch = 2073600
+                uint omni:rtx:pt:mgpu:maxPixelsPerRegionExponent = 12
+                int omni:rtx:pt:samplesPerIteration = 64
+                uint omni:rtx:pt:samplesPerPixel = 64
+                bool omni:rtx:reflections:denoiser:enabled = 0
+                token omni:rtx:rendermode = "RealTimePathTracing"
+                color3f omni:rtx:rt:ambientLight:color = (0.1, 0.1, 0.1)
+                bool omni:rtx:rt:demoire = 0
+                bool omni:rtx:rt:lightcache:spatialCache:dontResolveConflicts = 1
+                int omni:rtx:rt:sss:samples = 1
+                uint omni:rtx:rtpt:maxVolumeBounces = 15
+                float omni:rtx:rtpt:modulatingRoughnessThreshold = 0.08
+                bool omni:rtx:scene:hydra:materialSyncLoads = 1
+                bool omni:rtx:scene:hydra:mdlMaterialWarmup = 1
+                rel orderedVars = </Render/Vars/LdrColor>
+                custom bool overrideClipRange = 0
+                uniform int2 resolution = (1600, 1000)
+            }
+        }
+    }
+
+    def RenderSettings "OmniverseGlobalRenderSettings" (
+        prepend apiSchemas = ["OmniRtxSettingsGlobalRtAdvancedAPI_1", "OmniRtxSettingsGlobalPtAdvancedAPI_1"]
+        no_delete = true
+    )
+    {
+        rel products = </Render/OmniverseKit/HydraTextures/omni_kit_widget_viewport_ViewportTexture_0>
+    }
+
+    def "Vars" (
+        hide_in_stage_window = true
+        no_delete = true
+    )
+    {
+        def RenderVar "LdrColor" (
+            hide_in_stage_window = true
+            no_delete = true
+        )
+        {
+            uniform string sourceName = "LdrColor"
+            uniform token sourceType = "raw"
+        }
+    }
+}
+
+over "OmniverseKit_Persp"
+{
+    float exposure:fStop = 5
+    float exposure:responsivity = 1.1026709
+    float exposure:time = 0.02
+}
+
+def Xform "World"
+{
+    def PhysicsScene "Physics" (
+        prepend apiSchemas = ["NewtonSceneAPI", "PhysxSceneAPI"]
+    )
+    {
+        vector3f physics:gravityDirection = (0, 0, -1)
+    }
+
+    def "Materials"
+    {
+        def Material "asphalt"
+        {
+            token outputs:surface.connect = </World/Materials/asphalt/Shader.outputs:surface>
+
+            def Shader "Shader"
+            {
+                uniform token info:id = "UsdPreviewSurface"
+                color3f inputs:diffuseColor = (0.095, 0.115, 0.14)
+                float inputs:metallic = 0
+                float inputs:roughness = 0.95
+                token outputs:surface
+            }
+        }
+
+        def Material "concrete"
+        {
+            token outputs:surface.connect = </World/Materials/concrete/Shader.outputs:surface>
+
+            def Shader "Shader"
+            {
+                uniform token info:id = "UsdPreviewSurface"
+                color3f inputs:diffuseColor = (0.52, 0.55, 0.56)
+                float inputs:metallic = 0
+                float inputs:roughness = 0.9
+                token outputs:surface
+            }
+        }
+
+        def Material "white"
+        {
+            token outputs:surface.connect = </World/Materials/white/Shader.outputs:surface>
+
+            def Shader "Shader"
+            {
+                uniform token info:id = "UsdPreviewSurface"
+                color3f inputs:diffuseColor = (0.85, 0.88, 0.83)
+                float inputs:metallic = 0
+                float inputs:roughness = 0.7
+                token outputs:surface
+            }
+        }
+
+        def Material "yellow"
+        {
+            token outputs:surface.connect = </World/Materials/yellow/Shader.outputs:surface>
+
+            def Shader "Shader"
+            {
+                uniform token info:id = "UsdPreviewSurface"
+                color3f inputs:diffuseColor = (0.95, 0.64, 0.055)
+                float inputs:metallic = 0
+                float inputs:roughness = 0.65
+                token outputs:surface
+            }
+        }
+
+        def Material "blue"
+        {
+            token outputs:surface.connect = </World/Materials/blue/Shader.outputs:surface>
+
+            def Shader "Shader"
+            {
+                uniform token info:id = "UsdPreviewSurface"
+                color3f inputs:diffuseColor = (0.025, 0.28, 0.53)
+                float inputs:metallic = 0.35
+                float inputs:roughness = 0.28
+                token outputs:surface
+            }
+        }
+
+        def Material "red"
+        {
+            token outputs:surface.connect = </World/Materials/red/Shader.outputs:surface>
+
+            def Shader "Shader"
+            {
+                uniform token info:id = "UsdPreviewSurface"
+                color3f inputs:diffuseColor = (0.56, 0.07, 0.045)
+                float inputs:metallic = 0.3
+                float inputs:roughness = 0.3
+                token outputs:surface
+            }
+        }
+
+        def Material "silver"
+        {
+            token outputs:surface.connect = </World/Materials/silver/Shader.outputs:surface>
+
+            def Shader "Shader"
+            {
+                uniform token info:id = "UsdPreviewSurface"
+                color3f inputs:diffuseColor = (0.55, 0.62, 0.67)
+                float inputs:metallic = 0.55
+                float inputs:roughness = 0.3
+                token outputs:surface
+            }
+        }
+
+        def Material "teal"
+        {
+            token outputs:surface.connect = </World/Materials/teal/Shader.outputs:surface>
+
+            def Shader "Shader"
+            {
+                uniform token info:id = "UsdPreviewSurface"
+                color3f inputs:diffuseColor = (0.045, 0.35, 0.32)
+                float inputs:metallic = 0.3
+                float inputs:roughness = 0.35
+                token outputs:surface
+            }
+        }
+
+        def Material "glass"
+        {
+            token outputs:surface.connect = </World/Materials/glass/Shader.outputs:surface>
+
+            def Shader "Shader"
+            {
+                uniform token info:id = "UsdPreviewSurface"
+                color3f inputs:diffuseColor = (0.055, 0.1, 0.15)
+                float inputs:metallic = 0.45
+                float inputs:roughness = 0.12
+                token outputs:surface
+            }
+        }
+
+        def Material "rubber"
+        {
+            token outputs:surface.connect = </World/Materials/rubber/Shader.outputs:surface>
+
+            def Shader "Shader"
+            {
+                uniform token info:id = "UsdPreviewSurface"
+                color3f inputs:diffuseColor = (0.015, 0.02, 0.025)
+                float inputs:metallic = 0
+                float inputs:roughness = 0.85
+                token outputs:surface
+            }
+        }
+
+        def Material "chrome"
+        {
+            token outputs:surface.connect = </World/Materials/chrome/Shader.outputs:surface>
+
+            def Shader "Shader"
+            {
+                uniform token info:id = "UsdPreviewSurface"
+                color3f inputs:diffuseColor = (0.55, 0.6, 0.64)
+                float inputs:metallic = 0.8
+                float inputs:roughness = 0.23
+                token outputs:surface
+            }
+        }
+
+        def Material "orange"
+        {
+            token outputs:surface.connect = </World/Materials/orange/Shader.outputs:surface>
+
+            def Shader "Shader"
+            {
+                uniform token info:id = "UsdPreviewSurface"
+                color3f inputs:diffuseColor = (0.95, 0.22, 0.025)
+                float inputs:metallic = 0
+                float inputs:roughness = 0.7
+                token outputs:surface
+            }
+        }
+
+        def Material "grass"
+        {
+            token outputs:surface.connect = </World/Materials/grass/Shader.outputs:surface>
+
+            def Shader "Shader"
+            {
+                uniform token info:id = "UsdPreviewSurface"
+                color3f inputs:diffuseColor = (0.15, 0.28, 0.12)
+                float inputs:metallic = 0
+                float inputs:roughness = 0.95
+                token outputs:surface
+            }
+        }
+
+        def Material "leaf"
+        {
+            token outputs:surface.connect = </World/Materials/leaf/Shader.outputs:surface>
+
+            def Shader "Shader"
+            {
+                uniform token info:id = "UsdPreviewSurface"
+                color3f inputs:diffuseColor = (0.12, 0.3, 0.16)
+                float inputs:metallic = 0
+                float inputs:roughness = 0.9
+                token outputs:surface
+            }
+        }
+
+        def Material "bark"
+        {
+            token outputs:surface.connect = </World/Materials/bark/Shader.outputs:surface>
+
+            def Shader "Shader"
+            {
+                uniform token info:id = "UsdPreviewSurface"
+                color3f inputs:diffuseColor = (0.24, 0.15, 0.075)
+                float inputs:metallic = 0
+                float inputs:roughness = 0.9
+                token outputs:surface
+            }
+        }
+
+        def Material "wall"
+        {
+            token outputs:surface.connect = </World/Materials/wall/Shader.outputs:surface>
+
+            def Shader "Shader"
+            {
+                uniform token info:id = "UsdPreviewSurface"
+                color3f inputs:diffuseColor = (0.35, 0.4, 0.46)
+                float inputs:metallic = 0
+                float inputs:roughness = 0.85
+                token outputs:surface
+            }
+        }
+    }
+
+    def Cube "Ground" (
+        prepend apiSchemas = ["MaterialBindingAPI", "PhysicsCollisionAPI"]
+    )
+    {
+        rel material:binding = </World/Materials/grass>
+        double size = 1
+        float3 xformOp:scale = (70, 60, 0.2)
+        double3 xformOp:translate = (0, 0, -0.15)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+    }
+
+    def Cube "Lot" (
+        prepend apiSchemas = ["MaterialBindingAPI", "PhysicsCollisionAPI"]
+    )
+    {
+        rel material:binding = </World/Materials/asphalt>
+        double size = 1
+        float3 xformOp:scale = (42, 30, 0.15)
+        double3 xformOp:translate = (0, 0, -0.025)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+    }
+
+    def "Curbs"
+    {
+        def Cube "YN15" (
+            prepend apiSchemas = ["MaterialBindingAPI", "PhysicsCollisionAPI"]
+        )
+        {
+            rel material:binding = </World/Materials/concrete>
+            double size = 1
+            float3 xformOp:scale = (42, 0.3, 0.32)
+            double3 xformOp:translate = (0, -15, 0.13)
+            uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        }
+
+        def Cube "Y15" (
+            prepend apiSchemas = ["MaterialBindingAPI", "PhysicsCollisionAPI"]
+        )
+        {
+            rel material:binding = </World/Materials/concrete>
+            double size = 1
+            float3 xformOp:scale = (42, 0.3, 0.32)
+            double3 xformOp:translate = (0, 15, 0.13)
+            uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        }
+
+        def Cube "XN21" (
+            prepend apiSchemas = ["MaterialBindingAPI", "PhysicsCollisionAPI"]
+        )
+        {
+            rel material:binding = </World/Materials/concrete>
+            double size = 1
+            float3 xformOp:scale = (0.3, 30, 0.32)
+            double3 xformOp:translate = (-21, 0, 0.13)
+            uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        }
+
+        def Cube "X21" (
+            prepend apiSchemas = ["MaterialBindingAPI", "PhysicsCollisionAPI"]
+        )
+        {
+            rel material:binding = </World/Materials/concrete>
+            double size = 1
+            float3 xformOp:scale = (0.3, 30, 0.32)
+            double3 xformOp:translate = (21, 0, 0.13)
+            uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        }
+    }
+
+    def "Markings"
+    {
+        def Cube "R0_L0" (
+            prepend apiSchemas = ["MaterialBindingAPI"]
+        )
+        {
+            rel material:binding = </World/Materials/white>
+            double size = 1
+            float3 xformOp:scale = (0.09, 5.2, 0.012)
+            double3 xformOp:translate = (-18.2, -7.3, 0.058)
+            uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        }
+
+        def Cube "R0_L1" (
+            prepend apiSchemas = ["MaterialBindingAPI"]
+        )
+        {
+            rel material:binding = </World/Materials/white>
+            double size = 1
+            float3 xformOp:scale = (0.09, 5.2, 0.012)
+            double3 xformOp:translate = (-15.399999999999999, -7.3, 0.058)
+            uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        }
+
+        def Cube "R0_L2" (
+            prepend apiSchemas = ["MaterialBindingAPI"]
+        )
+        {
+            rel material:binding = </World/Materials/white>
+            double size = 1
+            float3 xformOp:scale = (0.09, 5.2, 0.012)
+            double3 xformOp:translate = (-12.6, -7.3, 0.058)
+            uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        }
+
+        def Cube "R0_L3" (
+            prepend apiSchemas = ["MaterialBindingAPI"]
+        )
+        {
+            rel material:binding = </World/Materials/white>
+            double size = 1
+            float3 xformOp:scale = (0.09, 5.2, 0.012)
+            double3 xformOp:translate = (-9.8, -7.3, 0.058)
+            uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        }
+
+        def Cube "R0_L4" (
+            prepend apiSchemas = ["MaterialBindingAPI"]
+        )
+        {
+            rel material:binding = </World/Materials/white>
+            double size = 1
+            float3 xformOp:scale = (0.09, 5.2, 0.012)
+            double3 xformOp:translate = (-7, -7.3, 0.058)
+            uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        }
+
+        def Cube "R0_L5" (
+            prepend apiSchemas = ["MaterialBindingAPI"]
+        )
+        {
+            rel material:binding = </World/Materials/white>
+            double size = 1
+            float3 xformOp:scale = (0.09, 5.2, 0.012)
+            double3 xformOp:translate = (-4.199999999999999, -7.3, 0.058)
+            uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        }
+
+        def Cube "R0_L6" (
+            prepend apiSchemas = ["MaterialBindingAPI"]
+        )
+        {
+            rel material:binding = </World/Materials/white>
+            double size = 1
+            float3 xformOp:scale = (0.09, 5.2, 0.012)
+            double3 xformOp:translate = (-1.4000000000000021, -7.3, 0.058)
+            uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        }
+
+        def Cube "R0_L7" (
+            prepend apiSchemas = ["MaterialBindingAPI"]
+        )
+        {
+            rel material:binding = </World/Materials/white>
+            double size = 1
+            float3 xformOp:scale = (0.09, 5.2, 0.012)
+            double3 xformOp:translate = (1.3999999999999986, -7.3, 0.058)
+            uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        }
+
+        def Cube "R0_L8" (
+            prepend apiSchemas = ["MaterialBindingAPI"]
+        )
+        {
+            rel material:binding = </World/Materials/white>
+            double size = 1
+            float3 xformOp:scale = (0.09, 5.2, 0.012)
+            double3 xformOp:translate = (4.199999999999999, -7.3, 0.058)
+            uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        }
+
+        def Cube "R0_L9" (
+            prepend apiSchemas = ["MaterialBindingAPI"]
+        )
+        {
+            rel material:binding = </World/Materials/white>
+            double size = 1
+            float3 xformOp:scale = (0.09, 5.2, 0.012)
+            double3 xformOp:translate = (7, -7.3, 0.058)
+            uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        }
+
+        def Cube "R0_L10" (
+            prepend apiSchemas = ["MaterialBindingAPI"]
+        )
+        {
+            rel material:binding = </World/Materials/white>
+            double size = 1
+            float3 xformOp:scale = (0.09, 5.2, 0.012)
+            double3 xformOp:translate = (9.8, -7.3, 0.058)
+            uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        }
+
+        def Cube "R0_L11" (
+            prepend apiSchemas = ["MaterialBindingAPI"]
+        )
+        {
+            rel material:binding = </World/Materials/white>
+            double size = 1
+            float3 xformOp:scale = (0.09, 5.2, 0.012)
+            double3 xformOp:translate = (12.599999999999998, -7.3, 0.058)
+            uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        }
+
+        def Cube "R0_L12" (
+            prepend apiSchemas = ["MaterialBindingAPI"]
+        )
+        {
+            rel material:binding = </World/Materials/white>
+            double size = 1
+            float3 xformOp:scale = (0.09, 5.2, 0.012)
+            double3 xformOp:translate = (15.399999999999995, -7.3, 0.058)
+            uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        }
+
+        def Cube "Back0" (
+            prepend apiSchemas = ["MaterialBindingAPI"]
+        )
+        {
+            rel material:binding = </World/Materials/white>
+            double size = 1
+            float3 xformOp:scale = (33.6, 0.09, 0.012)
+            double3 xformOp:translate = (-1.4, -9.9, 0.058)
+            uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        }
+
+        def Cube "R1_L0" (
+            prepend apiSchemas = ["MaterialBindingAPI"]
+        )
+        {
+            rel material:binding = </World/Materials/white>
+            double size = 1
+            float3 xformOp:scale = (0.09, 5.2, 0.012)
+            double3 xformOp:translate = (-18.2, 7.3, 0.058)
+            uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        }
+
+        def Cube "R1_L1" (
+            prepend apiSchemas = ["MaterialBindingAPI"]
+        )
+        {
+            rel material:binding = </World/Materials/white>
+            double size = 1
+            float3 xformOp:scale = (0.09, 5.2, 0.012)
+            double3 xformOp:translate = (-15.399999999999999, 7.3, 0.058)
+            uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        }
+
+        def Cube "R1_L2" (
+            prepend apiSchemas = ["MaterialBindingAPI"]
+        )
+        {
+            rel material:binding = </World/Materials/white>
+            double size = 1
+            float3 xformOp:scale = (0.09, 5.2, 0.012)
+            double3 xformOp:translate = (-12.6, 7.3, 0.058)
+            uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        }
+
+        def Cube "R1_L3" (
+            prepend apiSchemas = ["MaterialBindingAPI"]
+        )
+        {
+            rel material:binding = </World/Materials/white>
+            double size = 1
+            float3 xformOp:scale = (0.09, 5.2, 0.012)
+            double3 xformOp:translate = (-9.8, 7.3, 0.058)
+            uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        }
+
+        def Cube "R1_L4" (
+            prepend apiSchemas = ["MaterialBindingAPI"]
+        )
+        {
+            rel material:binding = </World/Materials/white>
+            double size = 1
+            float3 xformOp:scale = (0.09, 5.2, 0.012)
+            double3 xformOp:translate = (-7, 7.3, 0.058)
+            uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        }
+
+        def Cube "R1_L5" (
+            prepend apiSchemas = ["MaterialBindingAPI"]
+        )
+        {
+            rel material:binding = </World/Materials/white>
+            double size = 1
+            float3 xformOp:scale = (0.09, 5.2, 0.012)
+            double3 xformOp:translate = (-4.199999999999999, 7.3, 0.058)
+            uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        }
+
+        def Cube "R1_L6" (
+            prepend apiSchemas = ["MaterialBindingAPI"]
+        )
+        {
+            rel material:binding = </World/Materials/white>
+            double size = 1
+            float3 xformOp:scale = (0.09, 5.2, 0.012)
+            double3 xformOp:translate = (-1.4000000000000021, 7.3, 0.058)
+            uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        }
+
+        def Cube "R1_L7" (
+            prepend apiSchemas = ["MaterialBindingAPI"]
+        )
+        {
+            rel material:binding = </World/Materials/white>
+            double size = 1
+            float3 xformOp:scale = (0.09, 5.2, 0.012)
+            double3 xformOp:translate = (1.3999999999999986, 7.3, 0.058)
+            uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        }
+
+        def Cube "R1_L8" (
+            prepend apiSchemas = ["MaterialBindingAPI"]
+        )
+        {
+            rel material:binding = </World/Materials/white>
+            double size = 1
+            float3 xformOp:scale = (0.09, 5.2, 0.012)
+            double3 xformOp:translate = (4.199999999999999, 7.3, 0.058)
+            uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        }
+
+        def Cube "R1_L9" (
+            prepend apiSchemas = ["MaterialBindingAPI"]
+        )
+        {
+            rel material:binding = </World/Materials/white>
+            double size = 1
+            float3 xformOp:scale = (0.09, 5.2, 0.012)
+            double3 xformOp:translate = (7, 7.3, 0.058)
+            uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        }
+
+        def Cube "R1_L10" (
+            prepend apiSchemas = ["MaterialBindingAPI"]
+        )
+        {
+            rel material:binding = </World/Materials/white>
+            double size = 1
+            float3 xformOp:scale = (0.09, 5.2, 0.012)
+            double3 xformOp:translate = (9.8, 7.3, 0.058)
+            uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        }
+
+        def Cube "R1_L11" (
+            prepend apiSchemas = ["MaterialBindingAPI"]
+        )
+        {
+            rel material:binding = </World/Materials/white>
+            double size = 1
+            float3 xformOp:scale = (0.09, 5.2, 0.012)
+            double3 xformOp:translate = (12.599999999999998, 7.3, 0.058)
+            uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        }
+
+        def Cube "R1_L12" (
+            prepend apiSchemas = ["MaterialBindingAPI"]
+        )
+        {
+            rel material:binding = </World/Materials/white>
+            double size = 1
+            float3 xformOp:scale = (0.09, 5.2, 0.012)
+            double3 xformOp:translate = (15.399999999999995, 7.3, 0.058)
+            uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        }
+
+        def Cube "Back1" (
+            prepend apiSchemas = ["MaterialBindingAPI"]
+        )
+        {
+            rel material:binding = </World/Materials/white>
+            double size = 1
+            float3 xformOp:scale = (33.6, 0.09, 0.012)
+            double3 xformOp:translate = (-1.4, 9.9, 0.058)
+            uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        }
+
+        def Cube "Center0" (
+            prepend apiSchemas = ["MaterialBindingAPI"]
+        )
+        {
+            rel material:binding = </World/Materials/yellow>
+            double size = 1
+            float3 xformOp:scale = (1.5, 0.1, 0.012)
+            double3 xformOp:translate = (-18, 0, 0.058)
+            uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        }
+
+        def Cube "Center1" (
+            prepend apiSchemas = ["MaterialBindingAPI"]
+        )
+        {
+            rel material:binding = </World/Materials/yellow>
+            double size = 1
+            float3 xformOp:scale = (1.5, 0.1, 0.012)
+            double3 xformOp:translate = (-14.8, 0, 0.058)
+            uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        }
+
+        def Cube "Center2" (
+            prepend apiSchemas = ["MaterialBindingAPI"]
+        )
+        {
+            rel material:binding = </World/Materials/yellow>
+            double size = 1
+            float3 xformOp:scale = (1.5, 0.1, 0.012)
+            double3 xformOp:translate = (-11.6, 0, 0.058)
+            uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        }
+
+        def Cube "Center3" (
+            prepend apiSchemas = ["MaterialBindingAPI"]
+        )
+        {
+            rel material:binding = </World/Materials/yellow>
+            double size = 1
+            float3 xformOp:scale = (1.5, 0.1, 0.012)
+            double3 xformOp:translate = (-8.399999999999999, 0, 0.058)
+            uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        }
+
+        def Cube "Center4" (
+            prepend apiSchemas = ["MaterialBindingAPI"]
+        )
+        {
+            rel material:binding = </World/Materials/yellow>
+            double size = 1
+            float3 xformOp:scale = (1.5, 0.1, 0.012)
+            double3 xformOp:translate = (-5.199999999999999, 0, 0.058)
+            uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        }
+
+        def Cube "Center5" (
+            prepend apiSchemas = ["MaterialBindingAPI"]
+        )
+        {
+            rel material:binding = </World/Materials/yellow>
+            double size = 1
+            float3 xformOp:scale = (1.5, 0.1, 0.012)
+            double3 xformOp:translate = (-2, 0, 0.058)
+            uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        }
+
+        def Cube "Center6" (
+            prepend apiSchemas = ["MaterialBindingAPI"]
+        )
+        {
+            rel material:binding = </World/Materials/yellow>
+            double size = 1
+            float3 xformOp:scale = (1.5, 0.1, 0.012)
+            double3 xformOp:translate = (1.2000000000000028, 0, 0.058)
+            uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        }
+
+        def Cube "Center7" (
+            prepend apiSchemas = ["MaterialBindingAPI"]
+        )
+        {
+            rel material:binding = </World/Materials/yellow>
+            double size = 1
+            float3 xformOp:scale = (1.5, 0.1, 0.012)
+            double3 xformOp:translate = (4.400000000000002, 0, 0.058)
+            uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        }
+
+        def Cube "Center8" (
+            prepend apiSchemas = ["MaterialBindingAPI"]
+        )
+        {
+            rel material:binding = </World/Materials/yellow>
+            double size = 1
+            float3 xformOp:scale = (1.5, 0.1, 0.012)
+            double3 xformOp:translate = (7.600000000000001, 0, 0.058)
+            uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        }
+
+        def Cube "Center9" (
+            prepend apiSchemas = ["MaterialBindingAPI"]
+        )
+        {
+            rel material:binding = </World/Materials/yellow>
+            double size = 1
+            float3 xformOp:scale = (1.5, 0.1, 0.012)
+            double3 xformOp:translate = (10.8, 0, 0.058)
+            uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        }
+
+        def Cube "Center10" (
+            prepend apiSchemas = ["MaterialBindingAPI"]
+        )
+        {
+            rel material:binding = </World/Materials/yellow>
+            double size = 1
+            float3 xformOp:scale = (1.5, 0.1, 0.012)
+            double3 xformOp:translate = (14, 0, 0.058)
+            uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        }
+
+        def Cube "Center11" (
+            prepend apiSchemas = ["MaterialBindingAPI"]
+        )
+        {
+            rel material:binding = </World/Materials/yellow>
+            double size = 1
+            float3 xformOp:scale = (1.5, 0.1, 0.012)
+            double3 xformOp:translate = (17.200000000000003, 0, 0.058)
+            uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        }
+    }
+
+    def "WheelStops"
+    {
+        def Cube "R0_0" (
+            prepend apiSchemas = ["MaterialBindingAPI", "PhysicsCollisionAPI"]
+        )
+        {
+            rel material:binding = </World/Materials/concrete>
+            double size = 1
+            float3 xformOp:scale = (1.6, 0.22, 0.22)
+            double3 xformOp:translate = (-16.8, -9.3, 0.16)
+            uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        }
+
+        def Cube "R0_1" (
+            prepend apiSchemas = ["MaterialBindingAPI", "PhysicsCollisionAPI"]
+        )
+        {
+            rel material:binding = </World/Materials/concrete>
+            double size = 1
+            float3 xformOp:scale = (1.6, 0.22, 0.22)
+            double3 xformOp:translate = (-14, -9.3, 0.16)
+            uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        }
+
+        def Cube "R0_2" (
+            prepend apiSchemas = ["MaterialBindingAPI", "PhysicsCollisionAPI"]
+        )
+        {
+            rel material:binding = </World/Materials/concrete>
+            double size = 1
+            float3 xformOp:scale = (1.6, 0.22, 0.22)
+            double3 xformOp:translate = (-11.200000000000001, -9.3, 0.16)
+            uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        }
+
+        def Cube "R0_3" (
+            prepend apiSchemas = ["MaterialBindingAPI", "PhysicsCollisionAPI"]
+        )
+        {
+            rel material:binding = </World/Materials/concrete>
+            double size = 1
+            float3 xformOp:scale = (1.6, 0.22, 0.22)
+            double3 xformOp:translate = (-8.400000000000002, -9.3, 0.16)
+            uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        }
+
+        def Cube "R0_4" (
+            prepend apiSchemas = ["MaterialBindingAPI", "PhysicsCollisionAPI"]
+        )
+        {
+            rel material:binding = </World/Materials/concrete>
+            double size = 1
+            float3 xformOp:scale = (1.6, 0.22, 0.22)
+            double3 xformOp:translate = (-5.600000000000001, -9.3, 0.16)
+            uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        }
+
+        def Cube "R0_5" (
+            prepend apiSchemas = ["MaterialBindingAPI", "PhysicsCollisionAPI"]
+        )
+        {
+            rel material:binding = </World/Materials/concrete>
+            double size = 1
+            float3 xformOp:scale = (1.6, 0.22, 0.22)
+            double3 xformOp:translate = (-2.8000000000000007, -9.3, 0.16)
+            uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        }
+
+        def Cube "R0_6" (
+            prepend apiSchemas = ["MaterialBindingAPI", "PhysicsCollisionAPI"]
+        )
+        {
+            rel material:binding = </World/Materials/concrete>
+            double size = 1
+            float3 xformOp:scale = (1.6, 0.22, 0.22)
+            double3 xformOp:translate = (-3.552713678800501e-15, -9.3, 0.16)
+            uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        }
+
+        def Cube "R0_7" (
+            prepend apiSchemas = ["MaterialBindingAPI", "PhysicsCollisionAPI"]
+        )
+        {
+            rel material:binding = </World/Materials/concrete>
+            double size = 1
+            float3 xformOp:scale = (1.6, 0.22, 0.22)
+            double3 xformOp:translate = (2.799999999999997, -9.3, 0.16)
+            uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        }
+
+        def Cube "R0_8" (
+            prepend apiSchemas = ["MaterialBindingAPI", "PhysicsCollisionAPI"]
+        )
+        {
+            rel material:binding = </World/Materials/concrete>
+            double size = 1
+            float3 xformOp:scale = (1.6, 0.22, 0.22)
+            double3 xformOp:translate = (5.599999999999998, -9.3, 0.16)
+            uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        }
+
+        def Cube "R0_9" (
+            prepend apiSchemas = ["MaterialBindingAPI", "PhysicsCollisionAPI"]
+        )
+        {
+            rel material:binding = </World/Materials/concrete>
+            double size = 1
+            float3 xformOp:scale = (1.6, 0.22, 0.22)
+            double3 xformOp:translate = (8.399999999999999, -9.3, 0.16)
+            uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        }
+
+        def Cube "R0_10" (
+            prepend apiSchemas = ["MaterialBindingAPI", "PhysicsCollisionAPI"]
+        )
+        {
+            rel material:binding = </World/Materials/concrete>
+            double size = 1
+            float3 xformOp:scale = (1.6, 0.22, 0.22)
+            double3 xformOp:translate = (11.2, -9.3, 0.16)
+            uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        }
+
+        def Cube "R0_11" (
+            prepend apiSchemas = ["MaterialBindingAPI", "PhysicsCollisionAPI"]
+        )
+        {
+            rel material:binding = </World/Materials/concrete>
+            double size = 1
+            float3 xformOp:scale = (1.6, 0.22, 0.22)
+            double3 xformOp:translate = (13.999999999999996, -9.3, 0.16)
+            uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        }
+
+        def Cube "R1_0" (
+            prepend apiSchemas = ["MaterialBindingAPI", "PhysicsCollisionAPI"]
+        )
+        {
+            rel material:binding = </World/Materials/concrete>
+            double size = 1
+            float3 xformOp:scale = (1.6, 0.22, 0.22)
+            double3 xformOp:translate = (-16.8, 9.3, 0.16)
+            uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        }
+
+        def Cube "R1_1" (
+            prepend apiSchemas = ["MaterialBindingAPI", "PhysicsCollisionAPI"]
+        )
+        {
+            rel material:binding = </World/Materials/concrete>
+            double size = 1
+            float3 xformOp:scale = (1.6, 0.22, 0.22)
+            double3 xformOp:translate = (-14, 9.3, 0.16)
+            uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        }
+
+        def Cube "R1_2" (
+            prepend apiSchemas = ["MaterialBindingAPI", "PhysicsCollisionAPI"]
+        )
+        {
+            rel material:binding = </World/Materials/concrete>
+            double size = 1
+            float3 xformOp:scale = (1.6, 0.22, 0.22)
+            double3 xformOp:translate = (-11.200000000000001, 9.3, 0.16)
+            uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        }
+
+        def Cube "R1_3" (
+            prepend apiSchemas = ["MaterialBindingAPI", "PhysicsCollisionAPI"]
+        )
+        {
+            rel material:binding = </World/Materials/concrete>
+            double size = 1
+            float3 xformOp:scale = (1.6, 0.22, 0.22)
+            double3 xformOp:translate = (-8.400000000000002, 9.3, 0.16)
+            uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        }
+
+        def Cube "R1_4" (
+            prepend apiSchemas = ["MaterialBindingAPI", "PhysicsCollisionAPI"]
+        )
+        {
+            rel material:binding = </World/Materials/concrete>
+            double size = 1
+            float3 xformOp:scale = (1.6, 0.22, 0.22)
+            double3 xformOp:translate = (-5.600000000000001, 9.3, 0.16)
+            uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        }
+
+        def Cube "R1_5" (
+            prepend apiSchemas = ["MaterialBindingAPI", "PhysicsCollisionAPI"]
+        )
+        {
+            rel material:binding = </World/Materials/concrete>
+            double size = 1
+            float3 xformOp:scale = (1.6, 0.22, 0.22)
+            double3 xformOp:translate = (-2.8000000000000007, 9.3, 0.16)
+            uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        }
+
+        def Cube "R1_6" (
+            prepend apiSchemas = ["MaterialBindingAPI", "PhysicsCollisionAPI"]
+        )
+        {
+            rel material:binding = </World/Materials/concrete>
+            double size = 1
+            float3 xformOp:scale = (1.6, 0.22, 0.22)
+            double3 xformOp:translate = (-3.552713678800501e-15, 9.3, 0.16)
+            uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        }
+
+        def Cube "R1_7" (
+            prepend apiSchemas = ["MaterialBindingAPI", "PhysicsCollisionAPI"]
+        )
+        {
+            rel material:binding = </World/Materials/concrete>
+            double size = 1
+            float3 xformOp:scale = (1.6, 0.22, 0.22)
+            double3 xformOp:translate = (2.799999999999997, 9.3, 0.16)
+            uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        }
+
+        def Cube "R1_8" (
+            prepend apiSchemas = ["MaterialBindingAPI", "PhysicsCollisionAPI"]
+        )
+        {
+            rel material:binding = </World/Materials/concrete>
+            double size = 1
+            float3 xformOp:scale = (1.6, 0.22, 0.22)
+            double3 xformOp:translate = (5.599999999999998, 9.3, 0.16)
+            uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        }
+
+        def Cube "R1_9" (
+            prepend apiSchemas = ["MaterialBindingAPI", "PhysicsCollisionAPI"]
+        )
+        {
+            rel material:binding = </World/Materials/concrete>
+            double size = 1
+            float3 xformOp:scale = (1.6, 0.22, 0.22)
+            double3 xformOp:translate = (8.399999999999999, 9.3, 0.16)
+            uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        }
+
+        def Cube "R1_10" (
+            prepend apiSchemas = ["MaterialBindingAPI", "PhysicsCollisionAPI"]
+        )
+        {
+            rel material:binding = </World/Materials/concrete>
+            double size = 1
+            float3 xformOp:scale = (1.6, 0.22, 0.22)
+            double3 xformOp:translate = (11.2, 9.3, 0.16)
+            uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        }
+
+        def Cube "R1_11" (
+            prepend apiSchemas = ["MaterialBindingAPI", "PhysicsCollisionAPI"]
+        )
+        {
+            rel material:binding = </World/Materials/concrete>
+            double size = 1
+            float3 xformOp:scale = (1.6, 0.22, 0.22)
+            double3 xformOp:translate = (13.999999999999996, 9.3, 0.16)
+            uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        }
+    }
+
+    def Xform "EgoVehicle"
+    {
+        float xformOp:rotateZ = 0
+        double3 xformOp:translate = (-5, -2, 0)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:rotateZ"]
+
+        def Cube "Body" (
+            prepend apiSchemas = ["MaterialBindingAPI", "PhysicsCollisionAPI"]
+        )
+        {
+            rel material:binding = </World/Materials/blue>
+            double size = 1
+            float3 xformOp:scale = (4.3, 1.82, 0.7)
+            double3 xformOp:translate = (0, 0, 0.62)
+            uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        }
+
+        def Cube "Hood" (
+            prepend apiSchemas = ["MaterialBindingAPI"]
+        )
+        {
+            rel material:binding = </World/Materials/blue>
+            double size = 1
+            float3 xformOp:scale = (1.3, 1.78, 0.16)
+            double3 xformOp:translate = (1.35, 0, 0.97)
+            uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        }
+
+        def Mesh "Cabin" (
+            prepend apiSchemas = ["MaterialBindingAPI"]
+        )
+        {
+            int[] faceVertexCounts = [4, 4, 4, 4, 4, 4]
+            int[] faceVertexIndices = [0, 3, 2, 1, 0, 1, 5, 4, 1, 2, 6, 5, 2, 3, 7, 6, 3, 0, 4, 7, 4, 5, 6, 7]
+            rel material:binding = </World/Materials/glass>
+            point3f[] points = [(-1.25, -0.85, 0.95), (1.05, -0.85, 0.95), (1.05, 0.85, 0.95), (-1.25, 0.85, 0.95), (-0.75, -0.67, 1.62), (0.45, -0.67, 1.62), (0.45, 0.67, 1.62), (-0.75, 0.67, 1.62)]
+            uniform token subdivisionScheme = "none"
+        }
+
+        def Cube "Roof" (
+            prepend apiSchemas = ["MaterialBindingAPI"]
+        )
+        {
+            rel material:binding = </World/Materials/blue>
+            double size = 1
+            float3 xformOp:scale = (1.25, 1.37, 0.07)
+            double3 xformOp:translate = (-0.15, 0, 1.64)
+            uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        }
+
+        def Cylinder "TireBR" (
+            prepend apiSchemas = ["MaterialBindingAPI"]
+        )
+        {
+            double height = 0.23
+            rel material:binding = </World/Materials/rubber>
+            double radius = 0.38
+            float3 xformOp:rotateXYZ = (90, 0, 0)
+            float3 xformOp:scale = (1, 1, 1)
+            double3 xformOp:translate = (-1.35, -0.94, 0.39)
+            uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:rotateXYZ", "xformOp:scale"]
+        }
+
+        def Cylinder "RimBR" (
+            prepend apiSchemas = ["MaterialBindingAPI"]
+        )
+        {
+            double height = 0.018
+            rel material:binding = </World/Materials/chrome>
+            double radius = 0.23
+            float3 xformOp:rotateXYZ = (90, 0, 0)
+            float3 xformOp:scale = (1, 1, 1)
+            double3 xformOp:translate = (-1.35, -1.065, 0.39)
+            uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:rotateXYZ", "xformOp:scale"]
+        }
+
+        def Cylinder "TireBL" (
+            prepend apiSchemas = ["MaterialBindingAPI"]
+        )
+        {
+            double height = 0.23
+            rel material:binding = </World/Materials/rubber>
+            double radius = 0.38
+            float3 xformOp:rotateXYZ = (90, 0, 0)
+            float3 xformOp:scale = (1, 1, 1)
+            double3 xformOp:translate = (-1.35, 0.94, 0.39)
+            uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:rotateXYZ", "xformOp:scale"]
+        }
+
+        def Cylinder "RimBL" (
+            prepend apiSchemas = ["MaterialBindingAPI"]
+        )
+        {
+            double height = 0.018
+            rel material:binding = </World/Materials/chrome>
+            double radius = 0.23
+            float3 xformOp:rotateXYZ = (90, 0, 0)
+            float3 xformOp:scale = (1, 1, 1)
+            double3 xformOp:translate = (-1.35, 1.065, 0.39)
+            uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:rotateXYZ", "xformOp:scale"]
+        }
+
+        def Cylinder "TireFR" (
+            prepend apiSchemas = ["MaterialBindingAPI"]
+        )
+        {
+            double height = 0.23
+            rel material:binding = </World/Materials/rubber>
+            double radius = 0.38
+            float3 xformOp:rotateXYZ = (90, 0, 0)
+            float3 xformOp:scale = (1, 1, 1)
+            double3 xformOp:translate = (1.35, -0.94, 0.39)
+            uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:rotateXYZ", "xformOp:scale"]
+        }
+
+        def Cylinder "RimFR" (
+            prepend apiSchemas = ["MaterialBindingAPI"]
+        )
+        {
+            double height = 0.018
+            rel material:binding = </World/Materials/chrome>
+            double radius = 0.23
+            float3 xformOp:rotateXYZ = (90, 0, 0)
+            float3 xformOp:scale = (1, 1, 1)
+            double3 xformOp:translate = (1.35, -1.065, 0.39)
+            uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:rotateXYZ", "xformOp:scale"]
+        }
+
+        def Cylinder "TireFL" (
+            prepend apiSchemas = ["MaterialBindingAPI"]
+        )
+        {
+            double height = 0.23
+            rel material:binding = </World/Materials/rubber>
+            double radius = 0.38
+            float3 xformOp:rotateXYZ = (90, 0, 0)
+            float3 xformOp:scale = (1, 1, 1)
+            double3 xformOp:translate = (1.35, 0.94, 0.39)
+            uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:rotateXYZ", "xformOp:scale"]
+        }
+
+        def Cylinder "RimFL" (
+            prepend apiSchemas = ["MaterialBindingAPI"]
+        )
+        {
+            double height = 0.018
+            rel material:binding = </World/Materials/chrome>
+            double radius = 0.23
+            float3 xformOp:rotateXYZ = (90, 0, 0)
+            float3 xformOp:scale = (1, 1, 1)
+            double3 xformOp:translate = (1.35, 1.065, 0.39)
+            uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:rotateXYZ", "xformOp:scale"]
+        }
+
+        def Cube "HeadlightR" (
+            prepend apiSchemas = ["MaterialBindingAPI"]
+        )
+        {
+            rel material:binding = </World/Materials/white>
+            double size = 1
+            float3 xformOp:scale = (0.03, 0.4, 0.16)
+            double3 xformOp:translate = (2.16, -0.57, 0.82)
+            uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        }
+
+        def Cube "TailR" (
+            prepend apiSchemas = ["MaterialBindingAPI"]
+        )
+        {
+            rel material:binding = </World/Materials/red>
+            double size = 1
+            float3 xformOp:scale = (0.03, 0.4, 0.16)
+            double3 xformOp:translate = (-2.16, -0.57, 0.82)
+            uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        }
+
+        def Cube "HeadlightL" (
+            prepend apiSchemas = ["MaterialBindingAPI"]
+        )
+        {
+            rel material:binding = </World/Materials/white>
+            double size = 1
+            float3 xformOp:scale = (0.03, 0.4, 0.16)
+            double3 xformOp:translate = (2.16, 0.57, 0.82)
+            uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        }
+
+        def Cube "TailL" (
+            prepend apiSchemas = ["MaterialBindingAPI"]
+        )
+        {
+            rel material:binding = </World/Materials/red>
+            double size = 1
+            float3 xformOp:scale = (0.03, 0.4, 0.16)
+            double3 xformOp:translate = (-2.16, 0.57, 0.82)
+            uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        }
+
+        def Cube "Grille" (
+            prepend apiSchemas = ["MaterialBindingAPI"]
+        )
+        {
+            rel material:binding = </World/Materials/rubber>
+            double size = 1
+            float3 xformOp:scale = (0.035, 0.85, 0.16)
+            double3 xformOp:translate = (2.16, 0, 0.52)
+            uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        }
+
+        def Cube "MirrorR" (
+            prepend apiSchemas = ["MaterialBindingAPI"]
+        )
+        {
+            rel material:binding = </World/Materials/blue>
+            double size = 1
+            float3 xformOp:scale = (0.24, 0.17, 0.12)
+            double3 xformOp:translate = (0.55, -1, 1.15)
+            uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        }
+
+        def Cube "MirrorL" (
+            prepend apiSchemas = ["MaterialBindingAPI"]
+        )
+        {
+            rel material:binding = </World/Materials/blue>
+            double size = 1
+            float3 xformOp:scale = (0.24, 0.17, 0.12)
+            double3 xformOp:translate = (0.55, 1, 1.15)
+            uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        }
+
+        def "Cameras"
+        {
+            def Camera "CAM_FRONT"
+            {
+                float2 clippingRange = (0.05, 150)
+                float focalLength = 12.938635
+                float horizontalAperture = 20.955
+                float verticalAperture = 11.787188
+                matrix4d xformOp:transform = ( (0, -1, 0, 0), (0.049937616943892246, 0, 0.9987523388778449, 0), (-0.9987523388778449, 0, 0.049937616943892246, 0), (1.3000000000000003, 0, 1.7500000000000004, 1) )
+                uniform token[] xformOpOrder = ["xformOp:transform"]
+            }
+
+            def Camera "CAM_FRONT_LEFT"
+            {
+                float2 clippingRange = (0.05, 150)
+                float focalLength = 12.938635
+                float horizontalAperture = 20.955
+                float verticalAperture = 11.787188
+                matrix4d xformOp:transform = ( (0.8191520442889919, -0.5735764363510463, -3.469446951953614e-18, 0), (0.028643040366541327, 0.040906501006509915, 0.9987523388778448, 0), (-0.5728608073308264, -0.8181300201301983, 0.04993761694389223, 0), (0.8, 0.75, 1.75, 1) )
+                uniform token[] xformOpOrder = ["xformOp:transform"]
+            }
+
+            def Camera "CAM_FRONT_RIGHT"
+            {
+                float2 clippingRange = (0.05, 150)
+                float focalLength = 12.938635
+                float horizontalAperture = 20.955
+                float verticalAperture = 11.787188
+                matrix4d xformOp:transform = ( (-0.8191520442889919, -0.5735764363510463, 3.469446951953614e-18, 0), (0.028643040366541327, -0.040906501006509915, 0.9987523388778448, -0), (-0.5728608073308264, 0.8181300201301983, 0.04993761694389223, 0), (0.8, -0.75, 1.75, 1) )
+                uniform token[] xformOpOrder = ["xformOp:transform"]
+            }
+
+            def Camera "CAM_BACK"
+            {
+                float2 clippingRange = (0.05, 150)
+                float focalLength = 12.938635
+                float horizontalAperture = 20.955
+                float verticalAperture = 11.787188
+                matrix4d xformOp:transform = ( (1.2246467991473535e-16, 1, 0, 0), (-0.049937616943892246, 6.115594274738428e-18, 0.9987523388778449, -0), (0.9987523388778449, -1.2231188549476855e-16, 0.049937616943892246, 0), (-1.5000000000000004, -2.4651903288156624e-32, 1.6000000000000003, 1) )
+                uniform token[] xformOpOrder = ["xformOp:transform"]
+            }
+
+            def Camera "CAM_BACK_LEFT"
+            {
+                float2 clippingRange = (0.05, 150)
+                float focalLength = 12.938635
+                float horizontalAperture = 20.955
+                float verticalAperture = 11.787188
+                matrix4d xformOp:transform = ( (0.8191520442889918, 0.5735764363510463, 0, 0), (-0.028643040366541327, 0.040906501006509915, 0.9987523388778448, -0), (0.5728608073308266, -0.8181300201301984, 0.04993761694389223, 0), (-0.8999999999999999, 0.7500000000000001, 1.65, 1) )
+                uniform token[] xformOpOrder = ["xformOp:transform"]
+            }
+
+            def Camera "CAM_BACK_RIGHT"
+            {
+                float2 clippingRange = (0.05, 150)
+                float focalLength = 12.938635
+                float horizontalAperture = 20.955
+                float verticalAperture = 11.787188
+                matrix4d xformOp:transform = ( (-0.8191520442889918, 0.5735764363510463, 0, 0), (-0.028643040366541327, -0.040906501006509915, 0.9987523388778448, 0), (0.5728608073308266, 0.8181300201301984, 0.04993761694389223, -0), (-0.8999999999999999, -0.7500000000000001, 1.65, 1) )
+                uniform token[] xformOpOrder = ["xformOp:transform"]
+            }
+        }
+    }
+
+    def "ParkedVehicles"
+    {
+        def Xform "Car0"
+        {
+            float xformOp:rotateZ = 90
+            double3 xformOp:translate = (-16.8, 7.3, 0)
+            uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:rotateZ"]
+
+            def Cube "Body" (
+                prepend apiSchemas = ["MaterialBindingAPI", "PhysicsCollisionAPI"]
+            )
+            {
+                rel material:binding = </World/Materials/silver>
+                double size = 1
+                float3 xformOp:scale = (4.3, 1.82, 0.7)
+                double3 xformOp:translate = (0, 0, 0.62)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+            }
+
+            def Cube "Hood" (
+                prepend apiSchemas = ["MaterialBindingAPI"]
+            )
+            {
+                rel material:binding = </World/Materials/silver>
+                double size = 1
+                float3 xformOp:scale = (1.3, 1.78, 0.16)
+                double3 xformOp:translate = (1.35, 0, 0.97)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+            }
+
+            def Mesh "Cabin" (
+                prepend apiSchemas = ["MaterialBindingAPI"]
+            )
+            {
+                int[] faceVertexCounts = [4, 4, 4, 4, 4, 4]
+                int[] faceVertexIndices = [0, 3, 2, 1, 0, 1, 5, 4, 1, 2, 6, 5, 2, 3, 7, 6, 3, 0, 4, 7, 4, 5, 6, 7]
+                rel material:binding = </World/Materials/glass>
+                point3f[] points = [(-1.25, -0.85, 0.95), (1.05, -0.85, 0.95), (1.05, 0.85, 0.95), (-1.25, 0.85, 0.95), (-0.75, -0.67, 1.62), (0.45, -0.67, 1.62), (0.45, 0.67, 1.62), (-0.75, 0.67, 1.62)]
+                uniform token subdivisionScheme = "none"
+            }
+
+            def Cube "Roof" (
+                prepend apiSchemas = ["MaterialBindingAPI"]
+            )
+            {
+                rel material:binding = </World/Materials/silver>
+                double size = 1
+                float3 xformOp:scale = (1.25, 1.37, 0.07)
+                double3 xformOp:translate = (-0.15, 0, 1.64)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+            }
+
+            def Cylinder "TireBR" (
+                prepend apiSchemas = ["MaterialBindingAPI"]
+            )
+            {
+                double height = 0.23
+                rel material:binding = </World/Materials/rubber>
+                double radius = 0.38
+                float3 xformOp:rotateXYZ = (90, 0, 0)
+                float3 xformOp:scale = (1, 1, 1)
+                double3 xformOp:translate = (-1.35, -0.94, 0.39)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:rotateXYZ", "xformOp:scale"]
+            }
+
+            def Cylinder "RimBR" (
+                prepend apiSchemas = ["MaterialBindingAPI"]
+            )
+            {
+                double height = 0.018
+                rel material:binding = </World/Materials/chrome>
+                double radius = 0.23
+                float3 xformOp:rotateXYZ = (90, 0, 0)
+                float3 xformOp:scale = (1, 1, 1)
+                double3 xformOp:translate = (-1.35, -1.065, 0.39)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:rotateXYZ", "xformOp:scale"]
+            }
+
+            def Cylinder "TireBL" (
+                prepend apiSchemas = ["MaterialBindingAPI"]
+            )
+            {
+                double height = 0.23
+                rel material:binding = </World/Materials/rubber>
+                double radius = 0.38
+                float3 xformOp:rotateXYZ = (90, 0, 0)
+                float3 xformOp:scale = (1, 1, 1)
+                double3 xformOp:translate = (-1.35, 0.94, 0.39)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:rotateXYZ", "xformOp:scale"]
+            }
+
+            def Cylinder "RimBL" (
+                prepend apiSchemas = ["MaterialBindingAPI"]
+            )
+            {
+                double height = 0.018
+                rel material:binding = </World/Materials/chrome>
+                double radius = 0.23
+                float3 xformOp:rotateXYZ = (90, 0, 0)
+                float3 xformOp:scale = (1, 1, 1)
+                double3 xformOp:translate = (-1.35, 1.065, 0.39)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:rotateXYZ", "xformOp:scale"]
+            }
+
+            def Cylinder "TireFR" (
+                prepend apiSchemas = ["MaterialBindingAPI"]
+            )
+            {
+                double height = 0.23
+                rel material:binding = </World/Materials/rubber>
+                double radius = 0.38
+                float3 xformOp:rotateXYZ = (90, 0, 0)
+                float3 xformOp:scale = (1, 1, 1)
+                double3 xformOp:translate = (1.35, -0.94, 0.39)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:rotateXYZ", "xformOp:scale"]
+            }
+
+            def Cylinder "RimFR" (
+                prepend apiSchemas = ["MaterialBindingAPI"]
+            )
+            {
+                double height = 0.018
+                rel material:binding = </World/Materials/chrome>
+                double radius = 0.23
+                float3 xformOp:rotateXYZ = (90, 0, 0)
+                float3 xformOp:scale = (1, 1, 1)
+                double3 xformOp:translate = (1.35, -1.065, 0.39)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:rotateXYZ", "xformOp:scale"]
+            }
+
+            def Cylinder "TireFL" (
+                prepend apiSchemas = ["MaterialBindingAPI"]
+            )
+            {
+                double height = 0.23
+                rel material:binding = </World/Materials/rubber>
+                double radius = 0.38
+                float3 xformOp:rotateXYZ = (90, 0, 0)
+                float3 xformOp:scale = (1, 1, 1)
+                double3 xformOp:translate = (1.35, 0.94, 0.39)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:rotateXYZ", "xformOp:scale"]
+            }
+
+            def Cylinder "RimFL" (
+                prepend apiSchemas = ["MaterialBindingAPI"]
+            )
+            {
+                double height = 0.018
+                rel material:binding = </World/Materials/chrome>
+                double radius = 0.23
+                float3 xformOp:rotateXYZ = (90, 0, 0)
+                float3 xformOp:scale = (1, 1, 1)
+                double3 xformOp:translate = (1.35, 1.065, 0.39)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:rotateXYZ", "xformOp:scale"]
+            }
+
+            def Cube "HeadlightR" (
+                prepend apiSchemas = ["MaterialBindingAPI"]
+            )
+            {
+                rel material:binding = </World/Materials/white>
+                double size = 1
+                float3 xformOp:scale = (0.03, 0.4, 0.16)
+                double3 xformOp:translate = (2.16, -0.57, 0.82)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+            }
+
+            def Cube "TailR" (
+                prepend apiSchemas = ["MaterialBindingAPI"]
+            )
+            {
+                rel material:binding = </World/Materials/red>
+                double size = 1
+                float3 xformOp:scale = (0.03, 0.4, 0.16)
+                double3 xformOp:translate = (-2.16, -0.57, 0.82)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+            }
+
+            def Cube "HeadlightL" (
+                prepend apiSchemas = ["MaterialBindingAPI"]
+            )
+            {
+                rel material:binding = </World/Materials/white>
+                double size = 1
+                float3 xformOp:scale = (0.03, 0.4, 0.16)
+                double3 xformOp:translate = (2.16, 0.57, 0.82)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+            }
+
+            def Cube "TailL" (
+                prepend apiSchemas = ["MaterialBindingAPI"]
+            )
+            {
+                rel material:binding = </World/Materials/red>
+                double size = 1
+                float3 xformOp:scale = (0.03, 0.4, 0.16)
+                double3 xformOp:translate = (-2.16, 0.57, 0.82)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+            }
+
+            def Cube "Grille" (
+                prepend apiSchemas = ["MaterialBindingAPI"]
+            )
+            {
+                rel material:binding = </World/Materials/rubber>
+                double size = 1
+                float3 xformOp:scale = (0.035, 0.85, 0.16)
+                double3 xformOp:translate = (2.16, 0, 0.52)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+            }
+
+            def Cube "MirrorR" (
+                prepend apiSchemas = ["MaterialBindingAPI"]
+            )
+            {
+                rel material:binding = </World/Materials/silver>
+                double size = 1
+                float3 xformOp:scale = (0.24, 0.17, 0.12)
+                double3 xformOp:translate = (0.55, -1, 1.15)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+            }
+
+            def Cube "MirrorL" (
+                prepend apiSchemas = ["MaterialBindingAPI"]
+            )
+            {
+                rel material:binding = </World/Materials/silver>
+                double size = 1
+                float3 xformOp:scale = (0.24, 0.17, 0.12)
+                double3 xformOp:translate = (0.55, 1, 1.15)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+            }
+        }
+
+        def Xform "Car1"
+        {
+            float xformOp:rotateZ = 90
+            double3 xformOp:translate = (-11.2, 7.3, 0)
+            uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:rotateZ"]
+
+            def Cube "Body" (
+                prepend apiSchemas = ["MaterialBindingAPI", "PhysicsCollisionAPI"]
+            )
+            {
+                rel material:binding = </World/Materials/red>
+                double size = 1
+                float3 xformOp:scale = (4.3, 1.82, 0.7)
+                double3 xformOp:translate = (0, 0, 0.62)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+            }
+
+            def Cube "Hood" (
+                prepend apiSchemas = ["MaterialBindingAPI"]
+            )
+            {
+                rel material:binding = </World/Materials/red>
+                double size = 1
+                float3 xformOp:scale = (1.3, 1.78, 0.16)
+                double3 xformOp:translate = (1.35, 0, 0.97)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+            }
+
+            def Mesh "Cabin" (
+                prepend apiSchemas = ["MaterialBindingAPI"]
+            )
+            {
+                int[] faceVertexCounts = [4, 4, 4, 4, 4, 4]
+                int[] faceVertexIndices = [0, 3, 2, 1, 0, 1, 5, 4, 1, 2, 6, 5, 2, 3, 7, 6, 3, 0, 4, 7, 4, 5, 6, 7]
+                rel material:binding = </World/Materials/glass>
+                point3f[] points = [(-1.25, -0.85, 0.95), (1.05, -0.85, 0.95), (1.05, 0.85, 0.95), (-1.25, 0.85, 0.95), (-0.75, -0.67, 1.62), (0.45, -0.67, 1.62), (0.45, 0.67, 1.62), (-0.75, 0.67, 1.62)]
+                uniform token subdivisionScheme = "none"
+            }
+
+            def Cube "Roof" (
+                prepend apiSchemas = ["MaterialBindingAPI"]
+            )
+            {
+                rel material:binding = </World/Materials/red>
+                double size = 1
+                float3 xformOp:scale = (1.25, 1.37, 0.07)
+                double3 xformOp:translate = (-0.15, 0, 1.64)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+            }
+
+            def Cylinder "TireBR" (
+                prepend apiSchemas = ["MaterialBindingAPI"]
+            )
+            {
+                double height = 0.23
+                rel material:binding = </World/Materials/rubber>
+                double radius = 0.38
+                float3 xformOp:rotateXYZ = (90, 0, 0)
+                float3 xformOp:scale = (1, 1, 1)
+                double3 xformOp:translate = (-1.35, -0.94, 0.39)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:rotateXYZ", "xformOp:scale"]
+            }
+
+            def Cylinder "RimBR" (
+                prepend apiSchemas = ["MaterialBindingAPI"]
+            )
+            {
+                double height = 0.018
+                rel material:binding = </World/Materials/chrome>
+                double radius = 0.23
+                float3 xformOp:rotateXYZ = (90, 0, 0)
+                float3 xformOp:scale = (1, 1, 1)
+                double3 xformOp:translate = (-1.35, -1.065, 0.39)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:rotateXYZ", "xformOp:scale"]
+            }
+
+            def Cylinder "TireBL" (
+                prepend apiSchemas = ["MaterialBindingAPI"]
+            )
+            {
+                double height = 0.23
+                rel material:binding = </World/Materials/rubber>
+                double radius = 0.38
+                float3 xformOp:rotateXYZ = (90, 0, 0)
+                float3 xformOp:scale = (1, 1, 1)
+                double3 xformOp:translate = (-1.35, 0.94, 0.39)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:rotateXYZ", "xformOp:scale"]
+            }
+
+            def Cylinder "RimBL" (
+                prepend apiSchemas = ["MaterialBindingAPI"]
+            )
+            {
+                double height = 0.018
+                rel material:binding = </World/Materials/chrome>
+                double radius = 0.23
+                float3 xformOp:rotateXYZ = (90, 0, 0)
+                float3 xformOp:scale = (1, 1, 1)
+                double3 xformOp:translate = (-1.35, 1.065, 0.39)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:rotateXYZ", "xformOp:scale"]
+            }
+
+            def Cylinder "TireFR" (
+                prepend apiSchemas = ["MaterialBindingAPI"]
+            )
+            {
+                double height = 0.23
+                rel material:binding = </World/Materials/rubber>
+                double radius = 0.38
+                float3 xformOp:rotateXYZ = (90, 0, 0)
+                float3 xformOp:scale = (1, 1, 1)
+                double3 xformOp:translate = (1.35, -0.94, 0.39)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:rotateXYZ", "xformOp:scale"]
+            }
+
+            def Cylinder "RimFR" (
+                prepend apiSchemas = ["MaterialBindingAPI"]
+            )
+            {
+                double height = 0.018
+                rel material:binding = </World/Materials/chrome>
+                double radius = 0.23
+                float3 xformOp:rotateXYZ = (90, 0, 0)
+                float3 xformOp:scale = (1, 1, 1)
+                double3 xformOp:translate = (1.35, -1.065, 0.39)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:rotateXYZ", "xformOp:scale"]
+            }
+
+            def Cylinder "TireFL" (
+                prepend apiSchemas = ["MaterialBindingAPI"]
+            )
+            {
+                double height = 0.23
+                rel material:binding = </World/Materials/rubber>
+                double radius = 0.38
+                float3 xformOp:rotateXYZ = (90, 0, 0)
+                float3 xformOp:scale = (1, 1, 1)
+                double3 xformOp:translate = (1.35, 0.94, 0.39)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:rotateXYZ", "xformOp:scale"]
+            }
+
+            def Cylinder "RimFL" (
+                prepend apiSchemas = ["MaterialBindingAPI"]
+            )
+            {
+                double height = 0.018
+                rel material:binding = </World/Materials/chrome>
+                double radius = 0.23
+                float3 xformOp:rotateXYZ = (90, 0, 0)
+                float3 xformOp:scale = (1, 1, 1)
+                double3 xformOp:translate = (1.35, 1.065, 0.39)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:rotateXYZ", "xformOp:scale"]
+            }
+
+            def Cube "HeadlightR" (
+                prepend apiSchemas = ["MaterialBindingAPI"]
+            )
+            {
+                rel material:binding = </World/Materials/white>
+                double size = 1
+                float3 xformOp:scale = (0.03, 0.4, 0.16)
+                double3 xformOp:translate = (2.16, -0.57, 0.82)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+            }
+
+            def Cube "TailR" (
+                prepend apiSchemas = ["MaterialBindingAPI"]
+            )
+            {
+                rel material:binding = </World/Materials/red>
+                double size = 1
+                float3 xformOp:scale = (0.03, 0.4, 0.16)
+                double3 xformOp:translate = (-2.16, -0.57, 0.82)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+            }
+
+            def Cube "HeadlightL" (
+                prepend apiSchemas = ["MaterialBindingAPI"]
+            )
+            {
+                rel material:binding = </World/Materials/white>
+                double size = 1
+                float3 xformOp:scale = (0.03, 0.4, 0.16)
+                double3 xformOp:translate = (2.16, 0.57, 0.82)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+            }
+
+            def Cube "TailL" (
+                prepend apiSchemas = ["MaterialBindingAPI"]
+            )
+            {
+                rel material:binding = </World/Materials/red>
+                double size = 1
+                float3 xformOp:scale = (0.03, 0.4, 0.16)
+                double3 xformOp:translate = (-2.16, 0.57, 0.82)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+            }
+
+            def Cube "Grille" (
+                prepend apiSchemas = ["MaterialBindingAPI"]
+            )
+            {
+                rel material:binding = </World/Materials/rubber>
+                double size = 1
+                float3 xformOp:scale = (0.035, 0.85, 0.16)
+                double3 xformOp:translate = (2.16, 0, 0.52)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+            }
+
+            def Cube "MirrorR" (
+                prepend apiSchemas = ["MaterialBindingAPI"]
+            )
+            {
+                rel material:binding = </World/Materials/red>
+                double size = 1
+                float3 xformOp:scale = (0.24, 0.17, 0.12)
+                double3 xformOp:translate = (0.55, -1, 1.15)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+            }
+
+            def Cube "MirrorL" (
+                prepend apiSchemas = ["MaterialBindingAPI"]
+            )
+            {
+                rel material:binding = </World/Materials/red>
+                double size = 1
+                float3 xformOp:scale = (0.24, 0.17, 0.12)
+                double3 xformOp:translate = (0.55, 1, 1.15)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+            }
+        }
+
+        def Xform "Car2"
+        {
+            float xformOp:rotateZ = 90
+            double3 xformOp:translate = (-5.6, 7.3, 0)
+            uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:rotateZ"]
+
+            def Cube "Body" (
+                prepend apiSchemas = ["MaterialBindingAPI", "PhysicsCollisionAPI"]
+            )
+            {
+                rel material:binding = </World/Materials/teal>
+                double size = 1
+                float3 xformOp:scale = (4.3, 1.82, 0.7)
+                double3 xformOp:translate = (0, 0, 0.62)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+            }
+
+            def Cube "Hood" (
+                prepend apiSchemas = ["MaterialBindingAPI"]
+            )
+            {
+                rel material:binding = </World/Materials/teal>
+                double size = 1
+                float3 xformOp:scale = (1.3, 1.78, 0.16)
+                double3 xformOp:translate = (1.35, 0, 0.97)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+            }
+
+            def Mesh "Cabin" (
+                prepend apiSchemas = ["MaterialBindingAPI"]
+            )
+            {
+                int[] faceVertexCounts = [4, 4, 4, 4, 4, 4]
+                int[] faceVertexIndices = [0, 3, 2, 1, 0, 1, 5, 4, 1, 2, 6, 5, 2, 3, 7, 6, 3, 0, 4, 7, 4, 5, 6, 7]
+                rel material:binding = </World/Materials/glass>
+                point3f[] points = [(-1.25, -0.85, 0.95), (1.05, -0.85, 0.95), (1.05, 0.85, 0.95), (-1.25, 0.85, 0.95), (-0.75, -0.67, 1.62), (0.45, -0.67, 1.62), (0.45, 0.67, 1.62), (-0.75, 0.67, 1.62)]
+                uniform token subdivisionScheme = "none"
+            }
+
+            def Cube "Roof" (
+                prepend apiSchemas = ["MaterialBindingAPI"]
+            )
+            {
+                rel material:binding = </World/Materials/teal>
+                double size = 1
+                float3 xformOp:scale = (1.25, 1.37, 0.07)
+                double3 xformOp:translate = (-0.15, 0, 1.64)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+            }
+
+            def Cylinder "TireBR" (
+                prepend apiSchemas = ["MaterialBindingAPI"]
+            )
+            {
+                double height = 0.23
+                rel material:binding = </World/Materials/rubber>
+                double radius = 0.38
+                float3 xformOp:rotateXYZ = (90, 0, 0)
+                float3 xformOp:scale = (1, 1, 1)
+                double3 xformOp:translate = (-1.35, -0.94, 0.39)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:rotateXYZ", "xformOp:scale"]
+            }
+
+            def Cylinder "RimBR" (
+                prepend apiSchemas = ["MaterialBindingAPI"]
+            )
+            {
+                double height = 0.018
+                rel material:binding = </World/Materials/chrome>
+                double radius = 0.23
+                float3 xformOp:rotateXYZ = (90, 0, 0)
+                float3 xformOp:scale = (1, 1, 1)
+                double3 xformOp:translate = (-1.35, -1.065, 0.39)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:rotateXYZ", "xformOp:scale"]
+            }
+
+            def Cylinder "TireBL" (
+                prepend apiSchemas = ["MaterialBindingAPI"]
+            )
+            {
+                double height = 0.23
+                rel material:binding = </World/Materials/rubber>
+                double radius = 0.38
+                float3 xformOp:rotateXYZ = (90, 0, 0)
+                float3 xformOp:scale = (1, 1, 1)
+                double3 xformOp:translate = (-1.35, 0.94, 0.39)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:rotateXYZ", "xformOp:scale"]
+            }
+
+            def Cylinder "RimBL" (
+                prepend apiSchemas = ["MaterialBindingAPI"]
+            )
+            {
+                double height = 0.018
+                rel material:binding = </World/Materials/chrome>
+                double radius = 0.23
+                float3 xformOp:rotateXYZ = (90, 0, 0)
+                float3 xformOp:scale = (1, 1, 1)
+                double3 xformOp:translate = (-1.35, 1.065, 0.39)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:rotateXYZ", "xformOp:scale"]
+            }
+
+            def Cylinder "TireFR" (
+                prepend apiSchemas = ["MaterialBindingAPI"]
+            )
+            {
+                double height = 0.23
+                rel material:binding = </World/Materials/rubber>
+                double radius = 0.38
+                float3 xformOp:rotateXYZ = (90, 0, 0)
+                float3 xformOp:scale = (1, 1, 1)
+                double3 xformOp:translate = (1.35, -0.94, 0.39)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:rotateXYZ", "xformOp:scale"]
+            }
+
+            def Cylinder "RimFR" (
+                prepend apiSchemas = ["MaterialBindingAPI"]
+            )
+            {
+                double height = 0.018
+                rel material:binding = </World/Materials/chrome>
+                double radius = 0.23
+                float3 xformOp:rotateXYZ = (90, 0, 0)
+                float3 xformOp:scale = (1, 1, 1)
+                double3 xformOp:translate = (1.35, -1.065, 0.39)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:rotateXYZ", "xformOp:scale"]
+            }
+
+            def Cylinder "TireFL" (
+                prepend apiSchemas = ["MaterialBindingAPI"]
+            )
+            {
+                double height = 0.23
+                rel material:binding = </World/Materials/rubber>
+                double radius = 0.38
+                float3 xformOp:rotateXYZ = (90, 0, 0)
+                float3 xformOp:scale = (1, 1, 1)
+                double3 xformOp:translate = (1.35, 0.94, 0.39)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:rotateXYZ", "xformOp:scale"]
+            }
+
+            def Cylinder "RimFL" (
+                prepend apiSchemas = ["MaterialBindingAPI"]
+            )
+            {
+                double height = 0.018
+                rel material:binding = </World/Materials/chrome>
+                double radius = 0.23
+                float3 xformOp:rotateXYZ = (90, 0, 0)
+                float3 xformOp:scale = (1, 1, 1)
+                double3 xformOp:translate = (1.35, 1.065, 0.39)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:rotateXYZ", "xformOp:scale"]
+            }
+
+            def Cube "HeadlightR" (
+                prepend apiSchemas = ["MaterialBindingAPI"]
+            )
+            {
+                rel material:binding = </World/Materials/white>
+                double size = 1
+                float3 xformOp:scale = (0.03, 0.4, 0.16)
+                double3 xformOp:translate = (2.16, -0.57, 0.82)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+            }
+
+            def Cube "TailR" (
+                prepend apiSchemas = ["MaterialBindingAPI"]
+            )
+            {
+                rel material:binding = </World/Materials/red>
+                double size = 1
+                float3 xformOp:scale = (0.03, 0.4, 0.16)
+                double3 xformOp:translate = (-2.16, -0.57, 0.82)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+            }
+
+            def Cube "HeadlightL" (
+                prepend apiSchemas = ["MaterialBindingAPI"]
+            )
+            {
+                rel material:binding = </World/Materials/white>
+                double size = 1
+                float3 xformOp:scale = (0.03, 0.4, 0.16)
+                double3 xformOp:translate = (2.16, 0.57, 0.82)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+            }
+
+            def Cube "TailL" (
+                prepend apiSchemas = ["MaterialBindingAPI"]
+            )
+            {
+                rel material:binding = </World/Materials/red>
+                double size = 1
+                float3 xformOp:scale = (0.03, 0.4, 0.16)
+                double3 xformOp:translate = (-2.16, 0.57, 0.82)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+            }
+
+            def Cube "Grille" (
+                prepend apiSchemas = ["MaterialBindingAPI"]
+            )
+            {
+                rel material:binding = </World/Materials/rubber>
+                double size = 1
+                float3 xformOp:scale = (0.035, 0.85, 0.16)
+                double3 xformOp:translate = (2.16, 0, 0.52)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+            }
+
+            def Cube "MirrorR" (
+                prepend apiSchemas = ["MaterialBindingAPI"]
+            )
+            {
+                rel material:binding = </World/Materials/teal>
+                double size = 1
+                float3 xformOp:scale = (0.24, 0.17, 0.12)
+                double3 xformOp:translate = (0.55, -1, 1.15)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+            }
+
+            def Cube "MirrorL" (
+                prepend apiSchemas = ["MaterialBindingAPI"]
+            )
+            {
+                rel material:binding = </World/Materials/teal>
+                double size = 1
+                float3 xformOp:scale = (0.24, 0.17, 0.12)
+                double3 xformOp:translate = (0.55, 1, 1.15)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+            }
+        }
+
+        def Xform "Car3"
+        {
+            float xformOp:rotateZ = 90
+            double3 xformOp:translate = (2.8, 7.3, 0)
+            uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:rotateZ"]
+
+            def Cube "Body" (
+                prepend apiSchemas = ["MaterialBindingAPI", "PhysicsCollisionAPI"]
+            )
+            {
+                rel material:binding = </World/Materials/silver>
+                double size = 1
+                float3 xformOp:scale = (4.3, 1.82, 0.7)
+                double3 xformOp:translate = (0, 0, 0.62)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+            }
+
+            def Cube "Hood" (
+                prepend apiSchemas = ["MaterialBindingAPI"]
+            )
+            {
+                rel material:binding = </World/Materials/silver>
+                double size = 1
+                float3 xformOp:scale = (1.3, 1.78, 0.16)
+                double3 xformOp:translate = (1.35, 0, 0.97)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+            }
+
+            def Mesh "Cabin" (
+                prepend apiSchemas = ["MaterialBindingAPI"]
+            )
+            {
+                int[] faceVertexCounts = [4, 4, 4, 4, 4, 4]
+                int[] faceVertexIndices = [0, 3, 2, 1, 0, 1, 5, 4, 1, 2, 6, 5, 2, 3, 7, 6, 3, 0, 4, 7, 4, 5, 6, 7]
+                rel material:binding = </World/Materials/glass>
+                point3f[] points = [(-1.25, -0.85, 0.95), (1.05, -0.85, 0.95), (1.05, 0.85, 0.95), (-1.25, 0.85, 0.95), (-0.75, -0.67, 1.62), (0.45, -0.67, 1.62), (0.45, 0.67, 1.62), (-0.75, 0.67, 1.62)]
+                uniform token subdivisionScheme = "none"
+            }
+
+            def Cube "Roof" (
+                prepend apiSchemas = ["MaterialBindingAPI"]
+            )
+            {
+                rel material:binding = </World/Materials/silver>
+                double size = 1
+                float3 xformOp:scale = (1.25, 1.37, 0.07)
+                double3 xformOp:translate = (-0.15, 0, 1.64)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+            }
+
+            def Cylinder "TireBR" (
+                prepend apiSchemas = ["MaterialBindingAPI"]
+            )
+            {
+                double height = 0.23
+                rel material:binding = </World/Materials/rubber>
+                double radius = 0.38
+                float3 xformOp:rotateXYZ = (90, 0, 0)
+                float3 xformOp:scale = (1, 1, 1)
+                double3 xformOp:translate = (-1.35, -0.94, 0.39)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:rotateXYZ", "xformOp:scale"]
+            }
+
+            def Cylinder "RimBR" (
+                prepend apiSchemas = ["MaterialBindingAPI"]
+            )
+            {
+                double height = 0.018
+                rel material:binding = </World/Materials/chrome>
+                double radius = 0.23
+                float3 xformOp:rotateXYZ = (90, 0, 0)
+                float3 xformOp:scale = (1, 1, 1)
+                double3 xformOp:translate = (-1.35, -1.065, 0.39)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:rotateXYZ", "xformOp:scale"]
+            }
+
+            def Cylinder "TireBL" (
+                prepend apiSchemas = ["MaterialBindingAPI"]
+            )
+            {
+                double height = 0.23
+                rel material:binding = </World/Materials/rubber>
+                double radius = 0.38
+                float3 xformOp:rotateXYZ = (90, 0, 0)
+                float3 xformOp:scale = (1, 1, 1)
+                double3 xformOp:translate = (-1.35, 0.94, 0.39)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:rotateXYZ", "xformOp:scale"]
+            }
+
+            def Cylinder "RimBL" (
+                prepend apiSchemas = ["MaterialBindingAPI"]
+            )
+            {
+                double height = 0.018
+                rel material:binding = </World/Materials/chrome>
+                double radius = 0.23
+                float3 xformOp:rotateXYZ = (90, 0, 0)
+                float3 xformOp:scale = (1, 1, 1)
+                double3 xformOp:translate = (-1.35, 1.065, 0.39)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:rotateXYZ", "xformOp:scale"]
+            }
+
+            def Cylinder "TireFR" (
+                prepend apiSchemas = ["MaterialBindingAPI"]
+            )
+            {
+                double height = 0.23
+                rel material:binding = </World/Materials/rubber>
+                double radius = 0.38
+                float3 xformOp:rotateXYZ = (90, 0, 0)
+                float3 xformOp:scale = (1, 1, 1)
+                double3 xformOp:translate = (1.35, -0.94, 0.39)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:rotateXYZ", "xformOp:scale"]
+            }
+
+            def Cylinder "RimFR" (
+                prepend apiSchemas = ["MaterialBindingAPI"]
+            )
+            {
+                double height = 0.018
+                rel material:binding = </World/Materials/chrome>
+                double radius = 0.23
+                float3 xformOp:rotateXYZ = (90, 0, 0)
+                float3 xformOp:scale = (1, 1, 1)
+                double3 xformOp:translate = (1.35, -1.065, 0.39)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:rotateXYZ", "xformOp:scale"]
+            }
+
+            def Cylinder "TireFL" (
+                prepend apiSchemas = ["MaterialBindingAPI"]
+            )
+            {
+                double height = 0.23
+                rel material:binding = </World/Materials/rubber>
+                double radius = 0.38
+                float3 xformOp:rotateXYZ = (90, 0, 0)
+                float3 xformOp:scale = (1, 1, 1)
+                double3 xformOp:translate = (1.35, 0.94, 0.39)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:rotateXYZ", "xformOp:scale"]
+            }
+
+            def Cylinder "RimFL" (
+                prepend apiSchemas = ["MaterialBindingAPI"]
+            )
+            {
+                double height = 0.018
+                rel material:binding = </World/Materials/chrome>
+                double radius = 0.23
+                float3 xformOp:rotateXYZ = (90, 0, 0)
+                float3 xformOp:scale = (1, 1, 1)
+                double3 xformOp:translate = (1.35, 1.065, 0.39)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:rotateXYZ", "xformOp:scale"]
+            }
+
+            def Cube "HeadlightR" (
+                prepend apiSchemas = ["MaterialBindingAPI"]
+            )
+            {
+                rel material:binding = </World/Materials/white>
+                double size = 1
+                float3 xformOp:scale = (0.03, 0.4, 0.16)
+                double3 xformOp:translate = (2.16, -0.57, 0.82)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+            }
+
+            def Cube "TailR" (
+                prepend apiSchemas = ["MaterialBindingAPI"]
+            )
+            {
+                rel material:binding = </World/Materials/red>
+                double size = 1
+                float3 xformOp:scale = (0.03, 0.4, 0.16)
+                double3 xformOp:translate = (-2.16, -0.57, 0.82)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+            }
+
+            def Cube "HeadlightL" (
+                prepend apiSchemas = ["MaterialBindingAPI"]
+            )
+            {
+                rel material:binding = </World/Materials/white>
+                double size = 1
+                float3 xformOp:scale = (0.03, 0.4, 0.16)
+                double3 xformOp:translate = (2.16, 0.57, 0.82)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+            }
+
+            def Cube "TailL" (
+                prepend apiSchemas = ["MaterialBindingAPI"]
+            )
+            {
+                rel material:binding = </World/Materials/red>
+                double size = 1
+                float3 xformOp:scale = (0.03, 0.4, 0.16)
+                double3 xformOp:translate = (-2.16, 0.57, 0.82)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+            }
+
+            def Cube "Grille" (
+                prepend apiSchemas = ["MaterialBindingAPI"]
+            )
+            {
+                rel material:binding = </World/Materials/rubber>
+                double size = 1
+                float3 xformOp:scale = (0.035, 0.85, 0.16)
+                double3 xformOp:translate = (2.16, 0, 0.52)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+            }
+
+            def Cube "MirrorR" (
+                prepend apiSchemas = ["MaterialBindingAPI"]
+            )
+            {
+                rel material:binding = </World/Materials/silver>
+                double size = 1
+                float3 xformOp:scale = (0.24, 0.17, 0.12)
+                double3 xformOp:translate = (0.55, -1, 1.15)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+            }
+
+            def Cube "MirrorL" (
+                prepend apiSchemas = ["MaterialBindingAPI"]
+            )
+            {
+                rel material:binding = </World/Materials/silver>
+                double size = 1
+                float3 xformOp:scale = (0.24, 0.17, 0.12)
+                double3 xformOp:translate = (0.55, 1, 1.15)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+            }
+        }
+
+        def Xform "Car4"
+        {
+            float xformOp:rotateZ = 90
+            double3 xformOp:translate = (8.4, 7.3, 0)
+            uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:rotateZ"]
+
+            def Cube "Body" (
+                prepend apiSchemas = ["MaterialBindingAPI", "PhysicsCollisionAPI"]
+            )
+            {
+                rel material:binding = </World/Materials/blue>
+                double size = 1
+                float3 xformOp:scale = (4.3, 1.82, 0.7)
+                double3 xformOp:translate = (0, 0, 0.62)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+            }
+
+            def Cube "Hood" (
+                prepend apiSchemas = ["MaterialBindingAPI"]
+            )
+            {
+                rel material:binding = </World/Materials/blue>
+                double size = 1
+                float3 xformOp:scale = (1.3, 1.78, 0.16)
+                double3 xformOp:translate = (1.35, 0, 0.97)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+            }
+
+            def Mesh "Cabin" (
+                prepend apiSchemas = ["MaterialBindingAPI"]
+            )
+            {
+                int[] faceVertexCounts = [4, 4, 4, 4, 4, 4]
+                int[] faceVertexIndices = [0, 3, 2, 1, 0, 1, 5, 4, 1, 2, 6, 5, 2, 3, 7, 6, 3, 0, 4, 7, 4, 5, 6, 7]
+                rel material:binding = </World/Materials/glass>
+                point3f[] points = [(-1.25, -0.85, 0.95), (1.05, -0.85, 0.95), (1.05, 0.85, 0.95), (-1.25, 0.85, 0.95), (-0.75, -0.67, 1.62), (0.45, -0.67, 1.62), (0.45, 0.67, 1.62), (-0.75, 0.67, 1.62)]
+                uniform token subdivisionScheme = "none"
+            }
+
+            def Cube "Roof" (
+                prepend apiSchemas = ["MaterialBindingAPI"]
+            )
+            {
+                rel material:binding = </World/Materials/blue>
+                double size = 1
+                float3 xformOp:scale = (1.25, 1.37, 0.07)
+                double3 xformOp:translate = (-0.15, 0, 1.64)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+            }
+
+            def Cylinder "TireBR" (
+                prepend apiSchemas = ["MaterialBindingAPI"]
+            )
+            {
+                double height = 0.23
+                rel material:binding = </World/Materials/rubber>
+                double radius = 0.38
+                float3 xformOp:rotateXYZ = (90, 0, 0)
+                float3 xformOp:scale = (1, 1, 1)
+                double3 xformOp:translate = (-1.35, -0.94, 0.39)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:rotateXYZ", "xformOp:scale"]
+            }
+
+            def Cylinder "RimBR" (
+                prepend apiSchemas = ["MaterialBindingAPI"]
+            )
+            {
+                double height = 0.018
+                rel material:binding = </World/Materials/chrome>
+                double radius = 0.23
+                float3 xformOp:rotateXYZ = (90, 0, 0)
+                float3 xformOp:scale = (1, 1, 1)
+                double3 xformOp:translate = (-1.35, -1.065, 0.39)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:rotateXYZ", "xformOp:scale"]
+            }
+
+            def Cylinder "TireBL" (
+                prepend apiSchemas = ["MaterialBindingAPI"]
+            )
+            {
+                double height = 0.23
+                rel material:binding = </World/Materials/rubber>
+                double radius = 0.38
+                float3 xformOp:rotateXYZ = (90, 0, 0)
+                float3 xformOp:scale = (1, 1, 1)
+                double3 xformOp:translate = (-1.35, 0.94, 0.39)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:rotateXYZ", "xformOp:scale"]
+            }
+
+            def Cylinder "RimBL" (
+                prepend apiSchemas = ["MaterialBindingAPI"]
+            )
+            {
+                double height = 0.018
+                rel material:binding = </World/Materials/chrome>
+                double radius = 0.23
+                float3 xformOp:rotateXYZ = (90, 0, 0)
+                float3 xformOp:scale = (1, 1, 1)
+                double3 xformOp:translate = (-1.35, 1.065, 0.39)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:rotateXYZ", "xformOp:scale"]
+            }
+
+            def Cylinder "TireFR" (
+                prepend apiSchemas = ["MaterialBindingAPI"]
+            )
+            {
+                double height = 0.23
+                rel material:binding = </World/Materials/rubber>
+                double radius = 0.38
+                float3 xformOp:rotateXYZ = (90, 0, 0)
+                float3 xformOp:scale = (1, 1, 1)
+                double3 xformOp:translate = (1.35, -0.94, 0.39)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:rotateXYZ", "xformOp:scale"]
+            }
+
+            def Cylinder "RimFR" (
+                prepend apiSchemas = ["MaterialBindingAPI"]
+            )
+            {
+                double height = 0.018
+                rel material:binding = </World/Materials/chrome>
+                double radius = 0.23
+                float3 xformOp:rotateXYZ = (90, 0, 0)
+                float3 xformOp:scale = (1, 1, 1)
+                double3 xformOp:translate = (1.35, -1.065, 0.39)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:rotateXYZ", "xformOp:scale"]
+            }
+
+            def Cylinder "TireFL" (
+                prepend apiSchemas = ["MaterialBindingAPI"]
+            )
+            {
+                double height = 0.23
+                rel material:binding = </World/Materials/rubber>
+                double radius = 0.38
+                float3 xformOp:rotateXYZ = (90, 0, 0)
+                float3 xformOp:scale = (1, 1, 1)
+                double3 xformOp:translate = (1.35, 0.94, 0.39)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:rotateXYZ", "xformOp:scale"]
+            }
+
+            def Cylinder "RimFL" (
+                prepend apiSchemas = ["MaterialBindingAPI"]
+            )
+            {
+                double height = 0.018
+                rel material:binding = </World/Materials/chrome>
+                double radius = 0.23
+                float3 xformOp:rotateXYZ = (90, 0, 0)
+                float3 xformOp:scale = (1, 1, 1)
+                double3 xformOp:translate = (1.35, 1.065, 0.39)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:rotateXYZ", "xformOp:scale"]
+            }
+
+            def Cube "HeadlightR" (
+                prepend apiSchemas = ["MaterialBindingAPI"]
+            )
+            {
+                rel material:binding = </World/Materials/white>
+                double size = 1
+                float3 xformOp:scale = (0.03, 0.4, 0.16)
+                double3 xformOp:translate = (2.16, -0.57, 0.82)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+            }
+
+            def Cube "TailR" (
+                prepend apiSchemas = ["MaterialBindingAPI"]
+            )
+            {
+                rel material:binding = </World/Materials/red>
+                double size = 1
+                float3 xformOp:scale = (0.03, 0.4, 0.16)
+                double3 xformOp:translate = (-2.16, -0.57, 0.82)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+            }
+
+            def Cube "HeadlightL" (
+                prepend apiSchemas = ["MaterialBindingAPI"]
+            )
+            {
+                rel material:binding = </World/Materials/white>
+                double size = 1
+                float3 xformOp:scale = (0.03, 0.4, 0.16)
+                double3 xformOp:translate = (2.16, 0.57, 0.82)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+            }
+
+            def Cube "TailL" (
+                prepend apiSchemas = ["MaterialBindingAPI"]
+            )
+            {
+                rel material:binding = </World/Materials/red>
+                double size = 1
+                float3 xformOp:scale = (0.03, 0.4, 0.16)
+                double3 xformOp:translate = (-2.16, 0.57, 0.82)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+            }
+
+            def Cube "Grille" (
+                prepend apiSchemas = ["MaterialBindingAPI"]
+            )
+            {
+                rel material:binding = </World/Materials/rubber>
+                double size = 1
+                float3 xformOp:scale = (0.035, 0.85, 0.16)
+                double3 xformOp:translate = (2.16, 0, 0.52)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+            }
+
+            def Cube "MirrorR" (
+                prepend apiSchemas = ["MaterialBindingAPI"]
+            )
+            {
+                rel material:binding = </World/Materials/blue>
+                double size = 1
+                float3 xformOp:scale = (0.24, 0.17, 0.12)
+                double3 xformOp:translate = (0.55, -1, 1.15)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+            }
+
+            def Cube "MirrorL" (
+                prepend apiSchemas = ["MaterialBindingAPI"]
+            )
+            {
+                rel material:binding = </World/Materials/blue>
+                double size = 1
+                float3 xformOp:scale = (0.24, 0.17, 0.12)
+                double3 xformOp:translate = (0.55, 1, 1.15)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+            }
+        }
+
+        def Xform "Car5"
+        {
+            float xformOp:rotateZ = 90
+            double3 xformOp:translate = (14, 7.3, 0)
+            uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:rotateZ"]
+
+            def Cube "Body" (
+                prepend apiSchemas = ["MaterialBindingAPI", "PhysicsCollisionAPI"]
+            )
+            {
+                rel material:binding = </World/Materials/red>
+                double size = 1
+                float3 xformOp:scale = (4.3, 1.82, 0.7)
+                double3 xformOp:translate = (0, 0, 0.62)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+            }
+
+            def Cube "Hood" (
+                prepend apiSchemas = ["MaterialBindingAPI"]
+            )
+            {
+                rel material:binding = </World/Materials/red>
+                double size = 1
+                float3 xformOp:scale = (1.3, 1.78, 0.16)
+                double3 xformOp:translate = (1.35, 0, 0.97)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+            }
+
+            def Mesh "Cabin" (
+                prepend apiSchemas = ["MaterialBindingAPI"]
+            )
+            {
+                int[] faceVertexCounts = [4, 4, 4, 4, 4, 4]
+                int[] faceVertexIndices = [0, 3, 2, 1, 0, 1, 5, 4, 1, 2, 6, 5, 2, 3, 7, 6, 3, 0, 4, 7, 4, 5, 6, 7]
+                rel material:binding = </World/Materials/glass>
+                point3f[] points = [(-1.25, -0.85, 0.95), (1.05, -0.85, 0.95), (1.05, 0.85, 0.95), (-1.25, 0.85, 0.95), (-0.75, -0.67, 1.62), (0.45, -0.67, 1.62), (0.45, 0.67, 1.62), (-0.75, 0.67, 1.62)]
+                uniform token subdivisionScheme = "none"
+            }
+
+            def Cube "Roof" (
+                prepend apiSchemas = ["MaterialBindingAPI"]
+            )
+            {
+                rel material:binding = </World/Materials/red>
+                double size = 1
+                float3 xformOp:scale = (1.25, 1.37, 0.07)
+                double3 xformOp:translate = (-0.15, 0, 1.64)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+            }
+
+            def Cylinder "TireBR" (
+                prepend apiSchemas = ["MaterialBindingAPI"]
+            )
+            {
+                double height = 0.23
+                rel material:binding = </World/Materials/rubber>
+                double radius = 0.38
+                float3 xformOp:rotateXYZ = (90, 0, 0)
+                float3 xformOp:scale = (1, 1, 1)
+                double3 xformOp:translate = (-1.35, -0.94, 0.39)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:rotateXYZ", "xformOp:scale"]
+            }
+
+            def Cylinder "RimBR" (
+                prepend apiSchemas = ["MaterialBindingAPI"]
+            )
+            {
+                double height = 0.018
+                rel material:binding = </World/Materials/chrome>
+                double radius = 0.23
+                float3 xformOp:rotateXYZ = (90, 0, 0)
+                float3 xformOp:scale = (1, 1, 1)
+                double3 xformOp:translate = (-1.35, -1.065, 0.39)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:rotateXYZ", "xformOp:scale"]
+            }
+
+            def Cylinder "TireBL" (
+                prepend apiSchemas = ["MaterialBindingAPI"]
+            )
+            {
+                double height = 0.23
+                rel material:binding = </World/Materials/rubber>
+                double radius = 0.38
+                float3 xformOp:rotateXYZ = (90, 0, 0)
+                float3 xformOp:scale = (1, 1, 1)
+                double3 xformOp:translate = (-1.35, 0.94, 0.39)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:rotateXYZ", "xformOp:scale"]
+            }
+
+            def Cylinder "RimBL" (
+                prepend apiSchemas = ["MaterialBindingAPI"]
+            )
+            {
+                double height = 0.018
+                rel material:binding = </World/Materials/chrome>
+                double radius = 0.23
+                float3 xformOp:rotateXYZ = (90, 0, 0)
+                float3 xformOp:scale = (1, 1, 1)
+                double3 xformOp:translate = (-1.35, 1.065, 0.39)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:rotateXYZ", "xformOp:scale"]
+            }
+
+            def Cylinder "TireFR" (
+                prepend apiSchemas = ["MaterialBindingAPI"]
+            )
+            {
+                double height = 0.23
+                rel material:binding = </World/Materials/rubber>
+                double radius = 0.38
+                float3 xformOp:rotateXYZ = (90, 0, 0)
+                float3 xformOp:scale = (1, 1, 1)
+                double3 xformOp:translate = (1.35, -0.94, 0.39)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:rotateXYZ", "xformOp:scale"]
+            }
+
+            def Cylinder "RimFR" (
+                prepend apiSchemas = ["MaterialBindingAPI"]
+            )
+            {
+                double height = 0.018
+                rel material:binding = </World/Materials/chrome>
+                double radius = 0.23
+                float3 xformOp:rotateXYZ = (90, 0, 0)
+                float3 xformOp:scale = (1, 1, 1)
+                double3 xformOp:translate = (1.35, -1.065, 0.39)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:rotateXYZ", "xformOp:scale"]
+            }
+
+            def Cylinder "TireFL" (
+                prepend apiSchemas = ["MaterialBindingAPI"]
+            )
+            {
+                double height = 0.23
+                rel material:binding = </World/Materials/rubber>
+                double radius = 0.38
+                float3 xformOp:rotateXYZ = (90, 0, 0)
+                float3 xformOp:scale = (1, 1, 1)
+                double3 xformOp:translate = (1.35, 0.94, 0.39)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:rotateXYZ", "xformOp:scale"]
+            }
+
+            def Cylinder "RimFL" (
+                prepend apiSchemas = ["MaterialBindingAPI"]
+            )
+            {
+                double height = 0.018
+                rel material:binding = </World/Materials/chrome>
+                double radius = 0.23
+                float3 xformOp:rotateXYZ = (90, 0, 0)
+                float3 xformOp:scale = (1, 1, 1)
+                double3 xformOp:translate = (1.35, 1.065, 0.39)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:rotateXYZ", "xformOp:scale"]
+            }
+
+            def Cube "HeadlightR" (
+                prepend apiSchemas = ["MaterialBindingAPI"]
+            )
+            {
+                rel material:binding = </World/Materials/white>
+                double size = 1
+                float3 xformOp:scale = (0.03, 0.4, 0.16)
+                double3 xformOp:translate = (2.16, -0.57, 0.82)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+            }
+
+            def Cube "TailR" (
+                prepend apiSchemas = ["MaterialBindingAPI"]
+            )
+            {
+                rel material:binding = </World/Materials/red>
+                double size = 1
+                float3 xformOp:scale = (0.03, 0.4, 0.16)
+                double3 xformOp:translate = (-2.16, -0.57, 0.82)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+            }
+
+            def Cube "HeadlightL" (
+                prepend apiSchemas = ["MaterialBindingAPI"]
+            )
+            {
+                rel material:binding = </World/Materials/white>
+                double size = 1
+                float3 xformOp:scale = (0.03, 0.4, 0.16)
+                double3 xformOp:translate = (2.16, 0.57, 0.82)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+            }
+
+            def Cube "TailL" (
+                prepend apiSchemas = ["MaterialBindingAPI"]
+            )
+            {
+                rel material:binding = </World/Materials/red>
+                double size = 1
+                float3 xformOp:scale = (0.03, 0.4, 0.16)
+                double3 xformOp:translate = (-2.16, 0.57, 0.82)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+            }
+
+            def Cube "Grille" (
+                prepend apiSchemas = ["MaterialBindingAPI"]
+            )
+            {
+                rel material:binding = </World/Materials/rubber>
+                double size = 1
+                float3 xformOp:scale = (0.035, 0.85, 0.16)
+                double3 xformOp:translate = (2.16, 0, 0.52)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+            }
+
+            def Cube "MirrorR" (
+                prepend apiSchemas = ["MaterialBindingAPI"]
+            )
+            {
+                rel material:binding = </World/Materials/red>
+                double size = 1
+                float3 xformOp:scale = (0.24, 0.17, 0.12)
+                double3 xformOp:translate = (0.55, -1, 1.15)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+            }
+
+            def Cube "MirrorL" (
+                prepend apiSchemas = ["MaterialBindingAPI"]
+            )
+            {
+                rel material:binding = </World/Materials/red>
+                double size = 1
+                float3 xformOp:scale = (0.24, 0.17, 0.12)
+                double3 xformOp:translate = (0.55, 1, 1.15)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+            }
+        }
+
+        def Xform "Car6"
+        {
+            float xformOp:rotateZ = -90
+            double3 xformOp:translate = (-14, -7.3, 0)
+            uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:rotateZ"]
+
+            def Cube "Body" (
+                prepend apiSchemas = ["MaterialBindingAPI", "PhysicsCollisionAPI"]
+            )
+            {
+                rel material:binding = </World/Materials/teal>
+                double size = 1
+                float3 xformOp:scale = (4.3, 1.82, 0.7)
+                double3 xformOp:translate = (0, 0, 0.62)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+            }
+
+            def Cube "Hood" (
+                prepend apiSchemas = ["MaterialBindingAPI"]
+            )
+            {
+                rel material:binding = </World/Materials/teal>
+                double size = 1
+                float3 xformOp:scale = (1.3, 1.78, 0.16)
+                double3 xformOp:translate = (1.35, 0, 0.97)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+            }
+
+            def Mesh "Cabin" (
+                prepend apiSchemas = ["MaterialBindingAPI"]
+            )
+            {
+                int[] faceVertexCounts = [4, 4, 4, 4, 4, 4]
+                int[] faceVertexIndices = [0, 3, 2, 1, 0, 1, 5, 4, 1, 2, 6, 5, 2, 3, 7, 6, 3, 0, 4, 7, 4, 5, 6, 7]
+                rel material:binding = </World/Materials/glass>
+                point3f[] points = [(-1.25, -0.85, 0.95), (1.05, -0.85, 0.95), (1.05, 0.85, 0.95), (-1.25, 0.85, 0.95), (-0.75, -0.67, 1.62), (0.45, -0.67, 1.62), (0.45, 0.67, 1.62), (-0.75, 0.67, 1.62)]
+                uniform token subdivisionScheme = "none"
+            }
+
+            def Cube "Roof" (
+                prepend apiSchemas = ["MaterialBindingAPI"]
+            )
+            {
+                rel material:binding = </World/Materials/teal>
+                double size = 1
+                float3 xformOp:scale = (1.25, 1.37, 0.07)
+                double3 xformOp:translate = (-0.15, 0, 1.64)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+            }
+
+            def Cylinder "TireBR" (
+                prepend apiSchemas = ["MaterialBindingAPI"]
+            )
+            {
+                double height = 0.23
+                rel material:binding = </World/Materials/rubber>
+                double radius = 0.38
+                float3 xformOp:rotateXYZ = (90, 0, 0)
+                float3 xformOp:scale = (1, 1, 1)
+                double3 xformOp:translate = (-1.35, -0.94, 0.39)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:rotateXYZ", "xformOp:scale"]
+            }
+
+            def Cylinder "RimBR" (
+                prepend apiSchemas = ["MaterialBindingAPI"]
+            )
+            {
+                double height = 0.018
+                rel material:binding = </World/Materials/chrome>
+                double radius = 0.23
+                float3 xformOp:rotateXYZ = (90, 0, 0)
+                float3 xformOp:scale = (1, 1, 1)
+                double3 xformOp:translate = (-1.35, -1.065, 0.39)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:rotateXYZ", "xformOp:scale"]
+            }
+
+            def Cylinder "TireBL" (
+                prepend apiSchemas = ["MaterialBindingAPI"]
+            )
+            {
+                double height = 0.23
+                rel material:binding = </World/Materials/rubber>
+                double radius = 0.38
+                float3 xformOp:rotateXYZ = (90, 0, 0)
+                float3 xformOp:scale = (1, 1, 1)
+                double3 xformOp:translate = (-1.35, 0.94, 0.39)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:rotateXYZ", "xformOp:scale"]
+            }
+
+            def Cylinder "RimBL" (
+                prepend apiSchemas = ["MaterialBindingAPI"]
+            )
+            {
+                double height = 0.018
+                rel material:binding = </World/Materials/chrome>
+                double radius = 0.23
+                float3 xformOp:rotateXYZ = (90, 0, 0)
+                float3 xformOp:scale = (1, 1, 1)
+                double3 xformOp:translate = (-1.35, 1.065, 0.39)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:rotateXYZ", "xformOp:scale"]
+            }
+
+            def Cylinder "TireFR" (
+                prepend apiSchemas = ["MaterialBindingAPI"]
+            )
+            {
+                double height = 0.23
+                rel material:binding = </World/Materials/rubber>
+                double radius = 0.38
+                float3 xformOp:rotateXYZ = (90, 0, 0)
+                float3 xformOp:scale = (1, 1, 1)
+                double3 xformOp:translate = (1.35, -0.94, 0.39)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:rotateXYZ", "xformOp:scale"]
+            }
+
+            def Cylinder "RimFR" (
+                prepend apiSchemas = ["MaterialBindingAPI"]
+            )
+            {
+                double height = 0.018
+                rel material:binding = </World/Materials/chrome>
+                double radius = 0.23
+                float3 xformOp:rotateXYZ = (90, 0, 0)
+                float3 xformOp:scale = (1, 1, 1)
+                double3 xformOp:translate = (1.35, -1.065, 0.39)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:rotateXYZ", "xformOp:scale"]
+            }
+
+            def Cylinder "TireFL" (
+                prepend apiSchemas = ["MaterialBindingAPI"]
+            )
+            {
+                double height = 0.23
+                rel material:binding = </World/Materials/rubber>
+                double radius = 0.38
+                float3 xformOp:rotateXYZ = (90, 0, 0)
+                float3 xformOp:scale = (1, 1, 1)
+                double3 xformOp:translate = (1.35, 0.94, 0.39)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:rotateXYZ", "xformOp:scale"]
+            }
+
+            def Cylinder "RimFL" (
+                prepend apiSchemas = ["MaterialBindingAPI"]
+            )
+            {
+                double height = 0.018
+                rel material:binding = </World/Materials/chrome>
+                double radius = 0.23
+                float3 xformOp:rotateXYZ = (90, 0, 0)
+                float3 xformOp:scale = (1, 1, 1)
+                double3 xformOp:translate = (1.35, 1.065, 0.39)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:rotateXYZ", "xformOp:scale"]
+            }
+
+            def Cube "HeadlightR" (
+                prepend apiSchemas = ["MaterialBindingAPI"]
+            )
+            {
+                rel material:binding = </World/Materials/white>
+                double size = 1
+                float3 xformOp:scale = (0.03, 0.4, 0.16)
+                double3 xformOp:translate = (2.16, -0.57, 0.82)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+            }
+
+            def Cube "TailR" (
+                prepend apiSchemas = ["MaterialBindingAPI"]
+            )
+            {
+                rel material:binding = </World/Materials/red>
+                double size = 1
+                float3 xformOp:scale = (0.03, 0.4, 0.16)
+                double3 xformOp:translate = (-2.16, -0.57, 0.82)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+            }
+
+            def Cube "HeadlightL" (
+                prepend apiSchemas = ["MaterialBindingAPI"]
+            )
+            {
+                rel material:binding = </World/Materials/white>
+                double size = 1
+                float3 xformOp:scale = (0.03, 0.4, 0.16)
+                double3 xformOp:translate = (2.16, 0.57, 0.82)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+            }
+
+            def Cube "TailL" (
+                prepend apiSchemas = ["MaterialBindingAPI"]
+            )
+            {
+                rel material:binding = </World/Materials/red>
+                double size = 1
+                float3 xformOp:scale = (0.03, 0.4, 0.16)
+                double3 xformOp:translate = (-2.16, 0.57, 0.82)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+            }
+
+            def Cube "Grille" (
+                prepend apiSchemas = ["MaterialBindingAPI"]
+            )
+            {
+                rel material:binding = </World/Materials/rubber>
+                double size = 1
+                float3 xformOp:scale = (0.035, 0.85, 0.16)
+                double3 xformOp:translate = (2.16, 0, 0.52)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+            }
+
+            def Cube "MirrorR" (
+                prepend apiSchemas = ["MaterialBindingAPI"]
+            )
+            {
+                rel material:binding = </World/Materials/teal>
+                double size = 1
+                float3 xformOp:scale = (0.24, 0.17, 0.12)
+                double3 xformOp:translate = (0.55, -1, 1.15)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+            }
+
+            def Cube "MirrorL" (
+                prepend apiSchemas = ["MaterialBindingAPI"]
+            )
+            {
+                rel material:binding = </World/Materials/teal>
+                double size = 1
+                float3 xformOp:scale = (0.24, 0.17, 0.12)
+                double3 xformOp:translate = (0.55, 1, 1.15)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+            }
+        }
+
+        def Xform "Car7"
+        {
+            float xformOp:rotateZ = -90
+            double3 xformOp:translate = (0, -7.3, 0)
+            uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:rotateZ"]
+
+            def Cube "Body" (
+                prepend apiSchemas = ["MaterialBindingAPI", "PhysicsCollisionAPI"]
+            )
+            {
+                rel material:binding = </World/Materials/silver>
+                double size = 1
+                float3 xformOp:scale = (4.3, 1.82, 0.7)
+                double3 xformOp:translate = (0, 0, 0.62)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+            }
+
+            def Cube "Hood" (
+                prepend apiSchemas = ["MaterialBindingAPI"]
+            )
+            {
+                rel material:binding = </World/Materials/silver>
+                double size = 1
+                float3 xformOp:scale = (1.3, 1.78, 0.16)
+                double3 xformOp:translate = (1.35, 0, 0.97)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+            }
+
+            def Mesh "Cabin" (
+                prepend apiSchemas = ["MaterialBindingAPI"]
+            )
+            {
+                int[] faceVertexCounts = [4, 4, 4, 4, 4, 4]
+                int[] faceVertexIndices = [0, 3, 2, 1, 0, 1, 5, 4, 1, 2, 6, 5, 2, 3, 7, 6, 3, 0, 4, 7, 4, 5, 6, 7]
+                rel material:binding = </World/Materials/glass>
+                point3f[] points = [(-1.25, -0.85, 0.95), (1.05, -0.85, 0.95), (1.05, 0.85, 0.95), (-1.25, 0.85, 0.95), (-0.75, -0.67, 1.62), (0.45, -0.67, 1.62), (0.45, 0.67, 1.62), (-0.75, 0.67, 1.62)]
+                uniform token subdivisionScheme = "none"
+            }
+
+            def Cube "Roof" (
+                prepend apiSchemas = ["MaterialBindingAPI"]
+            )
+            {
+                rel material:binding = </World/Materials/silver>
+                double size = 1
+                float3 xformOp:scale = (1.25, 1.37, 0.07)
+                double3 xformOp:translate = (-0.15, 0, 1.64)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+            }
+
+            def Cylinder "TireBR" (
+                prepend apiSchemas = ["MaterialBindingAPI"]
+            )
+            {
+                double height = 0.23
+                rel material:binding = </World/Materials/rubber>
+                double radius = 0.38
+                float3 xformOp:rotateXYZ = (90, 0, 0)
+                float3 xformOp:scale = (1, 1, 1)
+                double3 xformOp:translate = (-1.35, -0.94, 0.39)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:rotateXYZ", "xformOp:scale"]
+            }
+
+            def Cylinder "RimBR" (
+                prepend apiSchemas = ["MaterialBindingAPI"]
+            )
+            {
+                double height = 0.018
+                rel material:binding = </World/Materials/chrome>
+                double radius = 0.23
+                float3 xformOp:rotateXYZ = (90, 0, 0)
+                float3 xformOp:scale = (1, 1, 1)
+                double3 xformOp:translate = (-1.35, -1.065, 0.39)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:rotateXYZ", "xformOp:scale"]
+            }
+
+            def Cylinder "TireBL" (
+                prepend apiSchemas = ["MaterialBindingAPI"]
+            )
+            {
+                double height = 0.23
+                rel material:binding = </World/Materials/rubber>
+                double radius = 0.38
+                float3 xformOp:rotateXYZ = (90, 0, 0)
+                float3 xformOp:scale = (1, 1, 1)
+                double3 xformOp:translate = (-1.35, 0.94, 0.39)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:rotateXYZ", "xformOp:scale"]
+            }
+
+            def Cylinder "RimBL" (
+                prepend apiSchemas = ["MaterialBindingAPI"]
+            )
+            {
+                double height = 0.018
+                rel material:binding = </World/Materials/chrome>
+                double radius = 0.23
+                float3 xformOp:rotateXYZ = (90, 0, 0)
+                float3 xformOp:scale = (1, 1, 1)
+                double3 xformOp:translate = (-1.35, 1.065, 0.39)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:rotateXYZ", "xformOp:scale"]
+            }
+
+            def Cylinder "TireFR" (
+                prepend apiSchemas = ["MaterialBindingAPI"]
+            )
+            {
+                double height = 0.23
+                rel material:binding = </World/Materials/rubber>
+                double radius = 0.38
+                float3 xformOp:rotateXYZ = (90, 0, 0)
+                float3 xformOp:scale = (1, 1, 1)
+                double3 xformOp:translate = (1.35, -0.94, 0.39)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:rotateXYZ", "xformOp:scale"]
+            }
+
+            def Cylinder "RimFR" (
+                prepend apiSchemas = ["MaterialBindingAPI"]
+            )
+            {
+                double height = 0.018
+                rel material:binding = </World/Materials/chrome>
+                double radius = 0.23
+                float3 xformOp:rotateXYZ = (90, 0, 0)
+                float3 xformOp:scale = (1, 1, 1)
+                double3 xformOp:translate = (1.35, -1.065, 0.39)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:rotateXYZ", "xformOp:scale"]
+            }
+
+            def Cylinder "TireFL" (
+                prepend apiSchemas = ["MaterialBindingAPI"]
+            )
+            {
+                double height = 0.23
+                rel material:binding = </World/Materials/rubber>
+                double radius = 0.38
+                float3 xformOp:rotateXYZ = (90, 0, 0)
+                float3 xformOp:scale = (1, 1, 1)
+                double3 xformOp:translate = (1.35, 0.94, 0.39)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:rotateXYZ", "xformOp:scale"]
+            }
+
+            def Cylinder "RimFL" (
+                prepend apiSchemas = ["MaterialBindingAPI"]
+            )
+            {
+                double height = 0.018
+                rel material:binding = </World/Materials/chrome>
+                double radius = 0.23
+                float3 xformOp:rotateXYZ = (90, 0, 0)
+                float3 xformOp:scale = (1, 1, 1)
+                double3 xformOp:translate = (1.35, 1.065, 0.39)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:rotateXYZ", "xformOp:scale"]
+            }
+
+            def Cube "HeadlightR" (
+                prepend apiSchemas = ["MaterialBindingAPI"]
+            )
+            {
+                rel material:binding = </World/Materials/white>
+                double size = 1
+                float3 xformOp:scale = (0.03, 0.4, 0.16)
+                double3 xformOp:translate = (2.16, -0.57, 0.82)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+            }
+
+            def Cube "TailR" (
+                prepend apiSchemas = ["MaterialBindingAPI"]
+            )
+            {
+                rel material:binding = </World/Materials/red>
+                double size = 1
+                float3 xformOp:scale = (0.03, 0.4, 0.16)
+                double3 xformOp:translate = (-2.16, -0.57, 0.82)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+            }
+
+            def Cube "HeadlightL" (
+                prepend apiSchemas = ["MaterialBindingAPI"]
+            )
+            {
+                rel material:binding = </World/Materials/white>
+                double size = 1
+                float3 xformOp:scale = (0.03, 0.4, 0.16)
+                double3 xformOp:translate = (2.16, 0.57, 0.82)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+            }
+
+            def Cube "TailL" (
+                prepend apiSchemas = ["MaterialBindingAPI"]
+            )
+            {
+                rel material:binding = </World/Materials/red>
+                double size = 1
+                float3 xformOp:scale = (0.03, 0.4, 0.16)
+                double3 xformOp:translate = (-2.16, 0.57, 0.82)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+            }
+
+            def Cube "Grille" (
+                prepend apiSchemas = ["MaterialBindingAPI"]
+            )
+            {
+                rel material:binding = </World/Materials/rubber>
+                double size = 1
+                float3 xformOp:scale = (0.035, 0.85, 0.16)
+                double3 xformOp:translate = (2.16, 0, 0.52)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+            }
+
+            def Cube "MirrorR" (
+                prepend apiSchemas = ["MaterialBindingAPI"]
+            )
+            {
+                rel material:binding = </World/Materials/silver>
+                double size = 1
+                float3 xformOp:scale = (0.24, 0.17, 0.12)
+                double3 xformOp:translate = (0.55, -1, 1.15)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+            }
+
+            def Cube "MirrorL" (
+                prepend apiSchemas = ["MaterialBindingAPI"]
+            )
+            {
+                rel material:binding = </World/Materials/silver>
+                double size = 1
+                float3 xformOp:scale = (0.24, 0.17, 0.12)
+                double3 xformOp:translate = (0.55, 1, 1.15)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+            }
+        }
+
+        def Xform "Car8"
+        {
+            float xformOp:rotateZ = -90
+            double3 xformOp:translate = (8.4, -7.3, 0)
+            uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:rotateZ"]
+
+            def Cube "Body" (
+                prepend apiSchemas = ["MaterialBindingAPI", "PhysicsCollisionAPI"]
+            )
+            {
+                rel material:binding = </World/Materials/red>
+                double size = 1
+                float3 xformOp:scale = (4.3, 1.82, 0.7)
+                double3 xformOp:translate = (0, 0, 0.62)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+            }
+
+            def Cube "Hood" (
+                prepend apiSchemas = ["MaterialBindingAPI"]
+            )
+            {
+                rel material:binding = </World/Materials/red>
+                double size = 1
+                float3 xformOp:scale = (1.3, 1.78, 0.16)
+                double3 xformOp:translate = (1.35, 0, 0.97)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+            }
+
+            def Mesh "Cabin" (
+                prepend apiSchemas = ["MaterialBindingAPI"]
+            )
+            {
+                int[] faceVertexCounts = [4, 4, 4, 4, 4, 4]
+                int[] faceVertexIndices = [0, 3, 2, 1, 0, 1, 5, 4, 1, 2, 6, 5, 2, 3, 7, 6, 3, 0, 4, 7, 4, 5, 6, 7]
+                rel material:binding = </World/Materials/glass>
+                point3f[] points = [(-1.25, -0.85, 0.95), (1.05, -0.85, 0.95), (1.05, 0.85, 0.95), (-1.25, 0.85, 0.95), (-0.75, -0.67, 1.62), (0.45, -0.67, 1.62), (0.45, 0.67, 1.62), (-0.75, 0.67, 1.62)]
+                uniform token subdivisionScheme = "none"
+            }
+
+            def Cube "Roof" (
+                prepend apiSchemas = ["MaterialBindingAPI"]
+            )
+            {
+                rel material:binding = </World/Materials/red>
+                double size = 1
+                float3 xformOp:scale = (1.25, 1.37, 0.07)
+                double3 xformOp:translate = (-0.15, 0, 1.64)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+            }
+
+            def Cylinder "TireBR" (
+                prepend apiSchemas = ["MaterialBindingAPI"]
+            )
+            {
+                double height = 0.23
+                rel material:binding = </World/Materials/rubber>
+                double radius = 0.38
+                float3 xformOp:rotateXYZ = (90, 0, 0)
+                float3 xformOp:scale = (1, 1, 1)
+                double3 xformOp:translate = (-1.35, -0.94, 0.39)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:rotateXYZ", "xformOp:scale"]
+            }
+
+            def Cylinder "RimBR" (
+                prepend apiSchemas = ["MaterialBindingAPI"]
+            )
+            {
+                double height = 0.018
+                rel material:binding = </World/Materials/chrome>
+                double radius = 0.23
+                float3 xformOp:rotateXYZ = (90, 0, 0)
+                float3 xformOp:scale = (1, 1, 1)
+                double3 xformOp:translate = (-1.35, -1.065, 0.39)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:rotateXYZ", "xformOp:scale"]
+            }
+
+            def Cylinder "TireBL" (
+                prepend apiSchemas = ["MaterialBindingAPI"]
+            )
+            {
+                double height = 0.23
+                rel material:binding = </World/Materials/rubber>
+                double radius = 0.38
+                float3 xformOp:rotateXYZ = (90, 0, 0)
+                float3 xformOp:scale = (1, 1, 1)
+                double3 xformOp:translate = (-1.35, 0.94, 0.39)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:rotateXYZ", "xformOp:scale"]
+            }
+
+            def Cylinder "RimBL" (
+                prepend apiSchemas = ["MaterialBindingAPI"]
+            )
+            {
+                double height = 0.018
+                rel material:binding = </World/Materials/chrome>
+                double radius = 0.23
+                float3 xformOp:rotateXYZ = (90, 0, 0)
+                float3 xformOp:scale = (1, 1, 1)
+                double3 xformOp:translate = (-1.35, 1.065, 0.39)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:rotateXYZ", "xformOp:scale"]
+            }
+
+            def Cylinder "TireFR" (
+                prepend apiSchemas = ["MaterialBindingAPI"]
+            )
+            {
+                double height = 0.23
+                rel material:binding = </World/Materials/rubber>
+                double radius = 0.38
+                float3 xformOp:rotateXYZ = (90, 0, 0)
+                float3 xformOp:scale = (1, 1, 1)
+                double3 xformOp:translate = (1.35, -0.94, 0.39)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:rotateXYZ", "xformOp:scale"]
+            }
+
+            def Cylinder "RimFR" (
+                prepend apiSchemas = ["MaterialBindingAPI"]
+            )
+            {
+                double height = 0.018
+                rel material:binding = </World/Materials/chrome>
+                double radius = 0.23
+                float3 xformOp:rotateXYZ = (90, 0, 0)
+                float3 xformOp:scale = (1, 1, 1)
+                double3 xformOp:translate = (1.35, -1.065, 0.39)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:rotateXYZ", "xformOp:scale"]
+            }
+
+            def Cylinder "TireFL" (
+                prepend apiSchemas = ["MaterialBindingAPI"]
+            )
+            {
+                double height = 0.23
+                rel material:binding = </World/Materials/rubber>
+                double radius = 0.38
+                float3 xformOp:rotateXYZ = (90, 0, 0)
+                float3 xformOp:scale = (1, 1, 1)
+                double3 xformOp:translate = (1.35, 0.94, 0.39)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:rotateXYZ", "xformOp:scale"]
+            }
+
+            def Cylinder "RimFL" (
+                prepend apiSchemas = ["MaterialBindingAPI"]
+            )
+            {
+                double height = 0.018
+                rel material:binding = </World/Materials/chrome>
+                double radius = 0.23
+                float3 xformOp:rotateXYZ = (90, 0, 0)
+                float3 xformOp:scale = (1, 1, 1)
+                double3 xformOp:translate = (1.35, 1.065, 0.39)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:rotateXYZ", "xformOp:scale"]
+            }
+
+            def Cube "HeadlightR" (
+                prepend apiSchemas = ["MaterialBindingAPI"]
+            )
+            {
+                rel material:binding = </World/Materials/white>
+                double size = 1
+                float3 xformOp:scale = (0.03, 0.4, 0.16)
+                double3 xformOp:translate = (2.16, -0.57, 0.82)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+            }
+
+            def Cube "TailR" (
+                prepend apiSchemas = ["MaterialBindingAPI"]
+            )
+            {
+                rel material:binding = </World/Materials/red>
+                double size = 1
+                float3 xformOp:scale = (0.03, 0.4, 0.16)
+                double3 xformOp:translate = (-2.16, -0.57, 0.82)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+            }
+
+            def Cube "HeadlightL" (
+                prepend apiSchemas = ["MaterialBindingAPI"]
+            )
+            {
+                rel material:binding = </World/Materials/white>
+                double size = 1
+                float3 xformOp:scale = (0.03, 0.4, 0.16)
+                double3 xformOp:translate = (2.16, 0.57, 0.82)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+            }
+
+            def Cube "TailL" (
+                prepend apiSchemas = ["MaterialBindingAPI"]
+            )
+            {
+                rel material:binding = </World/Materials/red>
+                double size = 1
+                float3 xformOp:scale = (0.03, 0.4, 0.16)
+                double3 xformOp:translate = (-2.16, 0.57, 0.82)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+            }
+
+            def Cube "Grille" (
+                prepend apiSchemas = ["MaterialBindingAPI"]
+            )
+            {
+                rel material:binding = </World/Materials/rubber>
+                double size = 1
+                float3 xformOp:scale = (0.035, 0.85, 0.16)
+                double3 xformOp:translate = (2.16, 0, 0.52)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+            }
+
+            def Cube "MirrorR" (
+                prepend apiSchemas = ["MaterialBindingAPI"]
+            )
+            {
+                rel material:binding = </World/Materials/red>
+                double size = 1
+                float3 xformOp:scale = (0.24, 0.17, 0.12)
+                double3 xformOp:translate = (0.55, -1, 1.15)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+            }
+
+            def Cube "MirrorL" (
+                prepend apiSchemas = ["MaterialBindingAPI"]
+            )
+            {
+                rel material:binding = </World/Materials/red>
+                double size = 1
+                float3 xformOp:scale = (0.24, 0.17, 0.12)
+                double3 xformOp:translate = (0.55, 1, 1.15)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+            }
+        }
+
+        def Xform "Car9"
+        {
+            float xformOp:rotateZ = -90
+            double3 xformOp:translate = (14, -7.3, 0)
+            uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:rotateZ"]
+
+            def Cube "Body" (
+                prepend apiSchemas = ["MaterialBindingAPI", "PhysicsCollisionAPI"]
+            )
+            {
+                rel material:binding = </World/Materials/silver>
+                double size = 1
+                float3 xformOp:scale = (4.3, 1.82, 0.7)
+                double3 xformOp:translate = (0, 0, 0.62)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+            }
+
+            def Cube "Hood" (
+                prepend apiSchemas = ["MaterialBindingAPI"]
+            )
+            {
+                rel material:binding = </World/Materials/silver>
+                double size = 1
+                float3 xformOp:scale = (1.3, 1.78, 0.16)
+                double3 xformOp:translate = (1.35, 0, 0.97)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+            }
+
+            def Mesh "Cabin" (
+                prepend apiSchemas = ["MaterialBindingAPI"]
+            )
+            {
+                int[] faceVertexCounts = [4, 4, 4, 4, 4, 4]
+                int[] faceVertexIndices = [0, 3, 2, 1, 0, 1, 5, 4, 1, 2, 6, 5, 2, 3, 7, 6, 3, 0, 4, 7, 4, 5, 6, 7]
+                rel material:binding = </World/Materials/glass>
+                point3f[] points = [(-1.25, -0.85, 0.95), (1.05, -0.85, 0.95), (1.05, 0.85, 0.95), (-1.25, 0.85, 0.95), (-0.75, -0.67, 1.62), (0.45, -0.67, 1.62), (0.45, 0.67, 1.62), (-0.75, 0.67, 1.62)]
+                uniform token subdivisionScheme = "none"
+            }
+
+            def Cube "Roof" (
+                prepend apiSchemas = ["MaterialBindingAPI"]
+            )
+            {
+                rel material:binding = </World/Materials/silver>
+                double size = 1
+                float3 xformOp:scale = (1.25, 1.37, 0.07)
+                double3 xformOp:translate = (-0.15, 0, 1.64)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+            }
+
+            def Cylinder "TireBR" (
+                prepend apiSchemas = ["MaterialBindingAPI"]
+            )
+            {
+                double height = 0.23
+                rel material:binding = </World/Materials/rubber>
+                double radius = 0.38
+                float3 xformOp:rotateXYZ = (90, 0, 0)
+                float3 xformOp:scale = (1, 1, 1)
+                double3 xformOp:translate = (-1.35, -0.94, 0.39)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:rotateXYZ", "xformOp:scale"]
+            }
+
+            def Cylinder "RimBR" (
+                prepend apiSchemas = ["MaterialBindingAPI"]
+            )
+            {
+                double height = 0.018
+                rel material:binding = </World/Materials/chrome>
+                double radius = 0.23
+                float3 xformOp:rotateXYZ = (90, 0, 0)
+                float3 xformOp:scale = (1, 1, 1)
+                double3 xformOp:translate = (-1.35, -1.065, 0.39)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:rotateXYZ", "xformOp:scale"]
+            }
+
+            def Cylinder "TireBL" (
+                prepend apiSchemas = ["MaterialBindingAPI"]
+            )
+            {
+                double height = 0.23
+                rel material:binding = </World/Materials/rubber>
+                double radius = 0.38
+                float3 xformOp:rotateXYZ = (90, 0, 0)
+                float3 xformOp:scale = (1, 1, 1)
+                double3 xformOp:translate = (-1.35, 0.94, 0.39)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:rotateXYZ", "xformOp:scale"]
+            }
+
+            def Cylinder "RimBL" (
+                prepend apiSchemas = ["MaterialBindingAPI"]
+            )
+            {
+                double height = 0.018
+                rel material:binding = </World/Materials/chrome>
+                double radius = 0.23
+                float3 xformOp:rotateXYZ = (90, 0, 0)
+                float3 xformOp:scale = (1, 1, 1)
+                double3 xformOp:translate = (-1.35, 1.065, 0.39)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:rotateXYZ", "xformOp:scale"]
+            }
+
+            def Cylinder "TireFR" (
+                prepend apiSchemas = ["MaterialBindingAPI"]
+            )
+            {
+                double height = 0.23
+                rel material:binding = </World/Materials/rubber>
+                double radius = 0.38
+                float3 xformOp:rotateXYZ = (90, 0, 0)
+                float3 xformOp:scale = (1, 1, 1)
+                double3 xformOp:translate = (1.35, -0.94, 0.39)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:rotateXYZ", "xformOp:scale"]
+            }
+
+            def Cylinder "RimFR" (
+                prepend apiSchemas = ["MaterialBindingAPI"]
+            )
+            {
+                double height = 0.018
+                rel material:binding = </World/Materials/chrome>
+                double radius = 0.23
+                float3 xformOp:rotateXYZ = (90, 0, 0)
+                float3 xformOp:scale = (1, 1, 1)
+                double3 xformOp:translate = (1.35, -1.065, 0.39)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:rotateXYZ", "xformOp:scale"]
+            }
+
+            def Cylinder "TireFL" (
+                prepend apiSchemas = ["MaterialBindingAPI"]
+            )
+            {
+                double height = 0.23
+                rel material:binding = </World/Materials/rubber>
+                double radius = 0.38
+                float3 xformOp:rotateXYZ = (90, 0, 0)
+                float3 xformOp:scale = (1, 1, 1)
+                double3 xformOp:translate = (1.35, 0.94, 0.39)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:rotateXYZ", "xformOp:scale"]
+            }
+
+            def Cylinder "RimFL" (
+                prepend apiSchemas = ["MaterialBindingAPI"]
+            )
+            {
+                double height = 0.018
+                rel material:binding = </World/Materials/chrome>
+                double radius = 0.23
+                float3 xformOp:rotateXYZ = (90, 0, 0)
+                float3 xformOp:scale = (1, 1, 1)
+                double3 xformOp:translate = (1.35, 1.065, 0.39)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:rotateXYZ", "xformOp:scale"]
+            }
+
+            def Cube "HeadlightR" (
+                prepend apiSchemas = ["MaterialBindingAPI"]
+            )
+            {
+                rel material:binding = </World/Materials/white>
+                double size = 1
+                float3 xformOp:scale = (0.03, 0.4, 0.16)
+                double3 xformOp:translate = (2.16, -0.57, 0.82)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+            }
+
+            def Cube "TailR" (
+                prepend apiSchemas = ["MaterialBindingAPI"]
+            )
+            {
+                rel material:binding = </World/Materials/red>
+                double size = 1
+                float3 xformOp:scale = (0.03, 0.4, 0.16)
+                double3 xformOp:translate = (-2.16, -0.57, 0.82)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+            }
+
+            def Cube "HeadlightL" (
+                prepend apiSchemas = ["MaterialBindingAPI"]
+            )
+            {
+                rel material:binding = </World/Materials/white>
+                double size = 1
+                float3 xformOp:scale = (0.03, 0.4, 0.16)
+                double3 xformOp:translate = (2.16, 0.57, 0.82)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+            }
+
+            def Cube "TailL" (
+                prepend apiSchemas = ["MaterialBindingAPI"]
+            )
+            {
+                rel material:binding = </World/Materials/red>
+                double size = 1
+                float3 xformOp:scale = (0.03, 0.4, 0.16)
+                double3 xformOp:translate = (-2.16, 0.57, 0.82)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+            }
+
+            def Cube "Grille" (
+                prepend apiSchemas = ["MaterialBindingAPI"]
+            )
+            {
+                rel material:binding = </World/Materials/rubber>
+                double size = 1
+                float3 xformOp:scale = (0.035, 0.85, 0.16)
+                double3 xformOp:translate = (2.16, 0, 0.52)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+            }
+
+            def Cube "MirrorR" (
+                prepend apiSchemas = ["MaterialBindingAPI"]
+            )
+            {
+                rel material:binding = </World/Materials/silver>
+                double size = 1
+                float3 xformOp:scale = (0.24, 0.17, 0.12)
+                double3 xformOp:translate = (0.55, -1, 1.15)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+            }
+
+            def Cube "MirrorL" (
+                prepend apiSchemas = ["MaterialBindingAPI"]
+            )
+            {
+                rel material:binding = </World/Materials/silver>
+                double size = 1
+                float3 xformOp:scale = (0.24, 0.17, 0.12)
+                double3 xformOp:translate = (0.55, 1, 1.15)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+            }
+        }
+    }
+
+    def "Cones"
+    {
+        def "C0"
+        {
+            def Cube "Base" (
+                prepend apiSchemas = ["MaterialBindingAPI", "PhysicsCollisionAPI"]
+            )
+            {
+                rel material:binding = </World/Materials/rubber>
+                double size = 1
+                float3 xformOp:scale = (0.48, 0.48, 0.08)
+                double3 xformOp:translate = (1, -2, 0.09)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+            }
+
+            def Cone "Cone" (
+                prepend apiSchemas = ["MaterialBindingAPI", "PhysicsCollisionAPI"]
+            )
+            {
+                double height = 0.65
+                rel material:binding = </World/Materials/orange>
+                double radius = 0.19
+                float3 xformOp:scale = (1, 1, 1)
+                double3 xformOp:translate = (1, -2, 0.43)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+            }
+
+            def Cylinder "Band" (
+                prepend apiSchemas = ["MaterialBindingAPI"]
+            )
+            {
+                double height = 0.12
+                rel material:binding = </World/Materials/white>
+                double radius = 0.12
+                float3 xformOp:scale = (1, 1, 1)
+                double3 xformOp:translate = (1, -2, 0.42)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+            }
+        }
+
+        def "C1"
+        {
+            def Cube "Base" (
+                prepend apiSchemas = ["MaterialBindingAPI", "PhysicsCollisionAPI"]
+            )
+            {
+                rel material:binding = </World/Materials/rubber>
+                double size = 1
+                float3 xformOp:scale = (0.48, 0.48, 0.08)
+                double3 xformOp:translate = (2.2, -2, 0.09)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+            }
+
+            def Cone "Cone" (
+                prepend apiSchemas = ["MaterialBindingAPI", "PhysicsCollisionAPI"]
+            )
+            {
+                double height = 0.65
+                rel material:binding = </World/Materials/orange>
+                double radius = 0.19
+                float3 xformOp:scale = (1, 1, 1)
+                double3 xformOp:translate = (2.2, -2, 0.43)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+            }
+
+            def Cylinder "Band" (
+                prepend apiSchemas = ["MaterialBindingAPI"]
+            )
+            {
+                double height = 0.12
+                rel material:binding = </World/Materials/white>
+                double radius = 0.12
+                float3 xformOp:scale = (1, 1, 1)
+                double3 xformOp:translate = (2.2, -2, 0.42)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+            }
+        }
+
+        def "C2"
+        {
+            def Cube "Base" (
+                prepend apiSchemas = ["MaterialBindingAPI", "PhysicsCollisionAPI"]
+            )
+            {
+                rel material:binding = </World/Materials/rubber>
+                double size = 1
+                float3 xformOp:scale = (0.48, 0.48, 0.08)
+                double3 xformOp:translate = (3.4, -2, 0.09)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+            }
+
+            def Cone "Cone" (
+                prepend apiSchemas = ["MaterialBindingAPI", "PhysicsCollisionAPI"]
+            )
+            {
+                double height = 0.65
+                rel material:binding = </World/Materials/orange>
+                double radius = 0.19
+                float3 xformOp:scale = (1, 1, 1)
+                double3 xformOp:translate = (3.4, -2, 0.43)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+            }
+
+            def Cylinder "Band" (
+                prepend apiSchemas = ["MaterialBindingAPI"]
+            )
+            {
+                double height = 0.12
+                rel material:binding = </World/Materials/white>
+                double radius = 0.12
+                float3 xformOp:scale = (1, 1, 1)
+                double3 xformOp:translate = (3.4, -2, 0.42)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+            }
+        }
+
+        def "C3"
+        {
+            def Cube "Base" (
+                prepend apiSchemas = ["MaterialBindingAPI", "PhysicsCollisionAPI"]
+            )
+            {
+                rel material:binding = </World/Materials/rubber>
+                double size = 1
+                float3 xformOp:scale = (0.48, 0.48, 0.08)
+                double3 xformOp:translate = (4.6, -2, 0.09)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+            }
+
+            def Cone "Cone" (
+                prepend apiSchemas = ["MaterialBindingAPI", "PhysicsCollisionAPI"]
+            )
+            {
+                double height = 0.65
+                rel material:binding = </World/Materials/orange>
+                double radius = 0.19
+                float3 xformOp:scale = (1, 1, 1)
+                double3 xformOp:translate = (4.6, -2, 0.43)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+            }
+
+            def Cylinder "Band" (
+                prepend apiSchemas = ["MaterialBindingAPI"]
+            )
+            {
+                double height = 0.12
+                rel material:binding = </World/Materials/white>
+                double radius = 0.12
+                float3 xformOp:scale = (1, 1, 1)
+                double3 xformOp:translate = (4.6, -2, 0.42)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+            }
+        }
+
+        def "C4"
+        {
+            def Cube "Base" (
+                prepend apiSchemas = ["MaterialBindingAPI", "PhysicsCollisionAPI"]
+            )
+            {
+                rel material:binding = </World/Materials/rubber>
+                double size = 1
+                float3 xformOp:scale = (0.48, 0.48, 0.08)
+                double3 xformOp:translate = (6, -1, 0.09)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+            }
+
+            def Cone "Cone" (
+                prepend apiSchemas = ["MaterialBindingAPI", "PhysicsCollisionAPI"]
+            )
+            {
+                double height = 0.65
+                rel material:binding = </World/Materials/orange>
+                double radius = 0.19
+                float3 xformOp:scale = (1, 1, 1)
+                double3 xformOp:translate = (6, -1, 0.43)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+            }
+
+            def Cylinder "Band" (
+                prepend apiSchemas = ["MaterialBindingAPI"]
+            )
+            {
+                double height = 0.12
+                rel material:binding = </World/Materials/white>
+                double radius = 0.12
+                float3 xformOp:scale = (1, 1, 1)
+                double3 xformOp:translate = (6, -1, 0.42)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+            }
+        }
+    }
+
+    def "Planters"
+    {
+        def Cube "P0" (
+            prepend apiSchemas = ["MaterialBindingAPI", "PhysicsCollisionAPI"]
+        )
+        {
+            rel material:binding = </World/Materials/concrete>
+            double size = 1
+            float3 xformOp:scale = (2.6, 2, 0.45)
+            double3 xformOp:translate = (-17, 12, 0.24)
+            uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        }
+
+        def Cube "Soil0" (
+            prepend apiSchemas = ["MaterialBindingAPI"]
+        )
+        {
+            rel material:binding = </World/Materials/bark>
+            double size = 1
+            float3 xformOp:scale = (2.3, 1.7, 0.05)
+            double3 xformOp:translate = (-17, 12, 0.48)
+            uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        }
+
+        def Cube "P1" (
+            prepend apiSchemas = ["MaterialBindingAPI", "PhysicsCollisionAPI"]
+        )
+        {
+            rel material:binding = </World/Materials/concrete>
+            double size = 1
+            float3 xformOp:scale = (2.6, 2, 0.45)
+            double3 xformOp:translate = (-8, 12, 0.24)
+            uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        }
+
+        def Cube "Soil1" (
+            prepend apiSchemas = ["MaterialBindingAPI"]
+        )
+        {
+            rel material:binding = </World/Materials/bark>
+            double size = 1
+            float3 xformOp:scale = (2.3, 1.7, 0.05)
+            double3 xformOp:translate = (-8, 12, 0.48)
+            uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        }
+
+        def Cube "P2" (
+            prepend apiSchemas = ["MaterialBindingAPI", "PhysicsCollisionAPI"]
+        )
+        {
+            rel material:binding = </World/Materials/concrete>
+            double size = 1
+            float3 xformOp:scale = (2.6, 2, 0.45)
+            double3 xformOp:translate = (1, 12, 0.24)
+            uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        }
+
+        def Cube "Soil2" (
+            prepend apiSchemas = ["MaterialBindingAPI"]
+        )
+        {
+            rel material:binding = </World/Materials/bark>
+            double size = 1
+            float3 xformOp:scale = (2.3, 1.7, 0.05)
+            double3 xformOp:translate = (1, 12, 0.48)
+            uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        }
+
+        def Cube "P3" (
+            prepend apiSchemas = ["MaterialBindingAPI", "PhysicsCollisionAPI"]
+        )
+        {
+            rel material:binding = </World/Materials/concrete>
+            double size = 1
+            float3 xformOp:scale = (2.6, 2, 0.45)
+            double3 xformOp:translate = (10, 12, 0.24)
+            uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        }
+
+        def Cube "Soil3" (
+            prepend apiSchemas = ["MaterialBindingAPI"]
+        )
+        {
+            rel material:binding = </World/Materials/bark>
+            double size = 1
+            float3 xformOp:scale = (2.3, 1.7, 0.05)
+            double3 xformOp:translate = (10, 12, 0.48)
+            uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        }
+
+        def Cube "P4" (
+            prepend apiSchemas = ["MaterialBindingAPI", "PhysicsCollisionAPI"]
+        )
+        {
+            rel material:binding = </World/Materials/concrete>
+            double size = 1
+            float3 xformOp:scale = (2.6, 2, 0.45)
+            double3 xformOp:translate = (18, 12, 0.24)
+            uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        }
+
+        def Cube "Soil4" (
+            prepend apiSchemas = ["MaterialBindingAPI"]
+        )
+        {
+            rel material:binding = </World/Materials/bark>
+            double size = 1
+            float3 xformOp:scale = (2.3, 1.7, 0.05)
+            double3 xformOp:translate = (18, 12, 0.48)
+            uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        }
+    }
+
+    def "Trees"
+    {
+        def Cylinder "Trunk0" (
+            prepend apiSchemas = ["MaterialBindingAPI"]
+        )
+        {
+            double height = 2.8
+            rel material:binding = </World/Materials/bark>
+            double radius = 0.16
+            float3 xformOp:scale = (1, 1, 1)
+            double3 xformOp:translate = (-17, 12, 1.9)
+            uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        }
+
+        def Sphere "Crown0" (
+            prepend apiSchemas = ["MaterialBindingAPI"]
+        )
+        {
+            rel material:binding = </World/Materials/leaf>
+            double radius = 1
+            float3 xformOp:scale = (1.3, 1.25, 1.7)
+            double3 xformOp:translate = (-17, 12, 3.4)
+            uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        }
+
+        def Cylinder "Trunk1" (
+            prepend apiSchemas = ["MaterialBindingAPI"]
+        )
+        {
+            double height = 2.8
+            rel material:binding = </World/Materials/bark>
+            double radius = 0.16
+            float3 xformOp:scale = (1, 1, 1)
+            double3 xformOp:translate = (-8, 12, 1.9)
+            uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        }
+
+        def Sphere "Crown1" (
+            prepend apiSchemas = ["MaterialBindingAPI"]
+        )
+        {
+            rel material:binding = </World/Materials/leaf>
+            double radius = 1
+            float3 xformOp:scale = (1.3, 1.25, 1.7)
+            double3 xformOp:translate = (-8, 12, 3.4)
+            uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        }
+
+        def Cylinder "Trunk2" (
+            prepend apiSchemas = ["MaterialBindingAPI"]
+        )
+        {
+            double height = 2.8
+            rel material:binding = </World/Materials/bark>
+            double radius = 0.16
+            float3 xformOp:scale = (1, 1, 1)
+            double3 xformOp:translate = (1, 12, 1.9)
+            uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        }
+
+        def Sphere "Crown2" (
+            prepend apiSchemas = ["MaterialBindingAPI"]
+        )
+        {
+            rel material:binding = </World/Materials/leaf>
+            double radius = 1
+            float3 xformOp:scale = (1.3, 1.25, 1.7)
+            double3 xformOp:translate = (1, 12, 3.4)
+            uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        }
+
+        def Cylinder "Trunk3" (
+            prepend apiSchemas = ["MaterialBindingAPI"]
+        )
+        {
+            double height = 2.8
+            rel material:binding = </World/Materials/bark>
+            double radius = 0.16
+            float3 xformOp:scale = (1, 1, 1)
+            double3 xformOp:translate = (10, 12, 1.9)
+            uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        }
+
+        def Sphere "Crown3" (
+            prepend apiSchemas = ["MaterialBindingAPI"]
+        )
+        {
+            rel material:binding = </World/Materials/leaf>
+            double radius = 1
+            float3 xformOp:scale = (1.3, 1.25, 1.7)
+            double3 xformOp:translate = (10, 12, 3.4)
+            uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        }
+
+        def Cylinder "Trunk4" (
+            prepend apiSchemas = ["MaterialBindingAPI"]
+        )
+        {
+            double height = 2.8
+            rel material:binding = </World/Materials/bark>
+            double radius = 0.16
+            float3 xformOp:scale = (1, 1, 1)
+            double3 xformOp:translate = (18, 12, 1.9)
+            uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        }
+
+        def Sphere "Crown4" (
+            prepend apiSchemas = ["MaterialBindingAPI"]
+        )
+        {
+            rel material:binding = </World/Materials/leaf>
+            double radius = 1
+            float3 xformOp:scale = (1.3, 1.25, 1.7)
+            double3 xformOp:translate = (18, 12, 3.4)
+            uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        }
+    }
+
+    def "Building"
+    {
+        def Cube "Main" (
+            prepend apiSchemas = ["MaterialBindingAPI", "PhysicsCollisionAPI"]
+        )
+        {
+            rel material:binding = </World/Materials/wall>
+            double size = 1
+            float3 xformOp:scale = (32, 8, 6)
+            double3 xformOp:translate = (0, 22, 3)
+            uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        }
+
+        def Cube "Window0" (
+            prepend apiSchemas = ["MaterialBindingAPI"]
+        )
+        {
+            rel material:binding = </World/Materials/glass>
+            double size = 1
+            float3 xformOp:scale = (2.8, 0.035, 2)
+            double3 xformOp:translate = (-14, 17.98, 3.5)
+            uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        }
+
+        def Cube "Window1" (
+            prepend apiSchemas = ["MaterialBindingAPI"]
+        )
+        {
+            rel material:binding = </World/Materials/glass>
+            double size = 1
+            float3 xformOp:scale = (2.8, 0.035, 2)
+            double3 xformOp:translate = (-10, 17.98, 3.5)
+            uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        }
+
+        def Cube "Window2" (
+            prepend apiSchemas = ["MaterialBindingAPI"]
+        )
+        {
+            rel material:binding = </World/Materials/glass>
+            double size = 1
+            float3 xformOp:scale = (2.8, 0.035, 2)
+            double3 xformOp:translate = (-6, 17.98, 3.5)
+            uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        }
+
+        def Cube "Window3" (
+            prepend apiSchemas = ["MaterialBindingAPI"]
+        )
+        {
+            rel material:binding = </World/Materials/glass>
+            double size = 1
+            float3 xformOp:scale = (2.8, 0.035, 2)
+            double3 xformOp:translate = (-2, 17.98, 3.5)
+            uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        }
+
+        def Cube "Window4" (
+            prepend apiSchemas = ["MaterialBindingAPI"]
+        )
+        {
+            rel material:binding = </World/Materials/glass>
+            double size = 1
+            float3 xformOp:scale = (2.8, 0.035, 2)
+            double3 xformOp:translate = (2, 17.98, 3.5)
+            uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        }
+
+        def Cube "Window5" (
+            prepend apiSchemas = ["MaterialBindingAPI"]
+        )
+        {
+            rel material:binding = </World/Materials/glass>
+            double size = 1
+            float3 xformOp:scale = (2.8, 0.035, 2)
+            double3 xformOp:translate = (6, 17.98, 3.5)
+            uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        }
+
+        def Cube "Window6" (
+            prepend apiSchemas = ["MaterialBindingAPI"]
+        )
+        {
+            rel material:binding = </World/Materials/glass>
+            double size = 1
+            float3 xformOp:scale = (2.8, 0.035, 2)
+            double3 xformOp:translate = (10, 17.98, 3.5)
+            uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        }
+
+        def Cube "Window7" (
+            prepend apiSchemas = ["MaterialBindingAPI"]
+        )
+        {
+            rel material:binding = </World/Materials/glass>
+            double size = 1
+            float3 xformOp:scale = (2.8, 0.035, 2)
+            double3 xformOp:translate = (14, 17.98, 3.5)
+            uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        }
+
+        def Cube "Canopy" (
+            prepend apiSchemas = ["MaterialBindingAPI"]
+        )
+        {
+            rel material:binding = </World/Materials/chrome>
+            double size = 1
+            float3 xformOp:scale = (33, 1.5, 0.2)
+            double3 xformOp:translate = (0, 17.5, 4.9)
+            uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        }
+    }
+
+    def "Lamp"
+    {
+        def Cylinder "Pole0" (
+            prepend apiSchemas = ["MaterialBindingAPI"]
+        )
+        {
+            double height = 6
+            rel material:binding = </World/Materials/chrome>
+            double radius = 0.065
+            float3 xformOp:scale = (1, 1, 1)
+            double3 xformOp:translate = (-18, 11, 3)
+            uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        }
+
+        def Cube "Head0" (
+            prepend apiSchemas = ["MaterialBindingAPI"]
+        )
+        {
+            rel material:binding = </World/Materials/chrome>
+            double size = 1
+            float3 xformOp:scale = (0.7, 0.9, 0.12)
+            double3 xformOp:translate = (-18, 10.7, 6)
+            uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        }
+
+        def Cylinder "Pole1" (
+            prepend apiSchemas = ["MaterialBindingAPI"]
+        )
+        {
+            double height = 6
+            rel material:binding = </World/Materials/chrome>
+            double radius = 0.065
+            float3 xformOp:scale = (1, 1, 1)
+            double3 xformOp:translate = (18, 11, 3)
+            uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        }
+
+        def Cube "Head1" (
+            prepend apiSchemas = ["MaterialBindingAPI"]
+        )
+        {
+            rel material:binding = </World/Materials/chrome>
+            double size = 1
+            float3 xformOp:scale = (0.7, 0.9, 0.12)
+            double3 xformOp:translate = (18, 10.7, 6)
+            uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        }
+    }
+
+    def "Lighting"
+    {
+        def DomeLight "Sky"
+        {
+            color3f inputs:color = (0.79, 0.87, 1)
+            float inputs:intensity = 650
+        }
+
+        def DistantLight "Sun"
+        {
+            float inputs:angle = 1.2
+            float inputs:intensity = 2200
+            float3 xformOp:rotateXYZ = (-35, -25, 25)
+            uniform token[] xformOpOrder = ["xformOp:rotateXYZ"]
+        }
+    }
+
+    def Camera "Overview"
+    {
+        float2 clippingRange = (0.05, 150)
+        float focalLength = 20.12709
+        float horizontalAperture = 20.955
+        float verticalAperture = 13.096875
+        matrix4d xformOp:transform = ( (0.7719302356170495, 0.6357072528610995, -2.77555756156289e-17, 0), (-0.3322359650056582, 0.40342938607829937, 0.8525631906229855, -0), (0.5419806038014322, -0.6581193046160249, 0.5226241536656668, 0), (27.000000000000004, -33, 26.999999999999996, 1) )
+        uniform token[] xformOpOrder = ["xformOp:transform"]
+    }
+}

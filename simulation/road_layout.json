@@ -1,0 +1,127 @@
+{
+  "description": "Navigable road and parking pavement only; no parked-car or cone coordinates.",
+  "rectangles": [
+    [
+      -29.8,
+      -28.8,
+      -21.15,
+      18.8
+    ],
+    [
+      -24.0,
+      -10.8,
+      -17.0,
+      3.8
+    ],
+    [
+      -20.8,
+      -4.65,
+      20.8,
+      4.65
+    ],
+    [
+      -18.2,
+      4.65,
+      15.4,
+      9.9
+    ],
+    [
+      -18.2,
+      -9.9,
+      15.4,
+      -4.65
+    ]
+  ],
+  "lane_preferences": {
+    "description": "Soft mapped traffic preferences; markings never become collision obstacles. Heading refers to direction of travel, including reverse.",
+    "zones": [
+      {
+        "bounds": [
+          -29.8,
+          -28.8,
+          -21.15,
+          18.8
+        ],
+        "lanes": [
+          {
+            "center": [
+              -23.25,
+              0
+            ],
+            "heading_deg": 90
+          },
+          {
+            "center": [
+              -27.75,
+              0
+            ],
+            "heading_deg": -90
+          }
+        ],
+        "center_weight": 0.18,
+        "direction_weight": 0.6,
+        "relax_bounds": [
+          -29.8,
+          -11,
+          -21.15,
+          4
+        ],
+        "relax_factor": 0.2
+      },
+      {
+        "bounds": [
+          -20.8,
+          -4.65,
+          20.8,
+          4.65
+        ],
+        "lanes": [
+          {
+            "center": [
+              0,
+              -2.2
+            ],
+            "heading_deg": 0
+          },
+          {
+            "center": [
+              0,
+              2.2
+            ],
+            "heading_deg": 180
+          }
+        ],
+        "center_weight": 0.08,
+        "direction_weight": 0.2
+      }
+    ],
+    "dividers": [
+      {
+        "start": [
+          -25.5,
+          -28.8
+        ],
+        "end": [
+          -25.5,
+          18.8
+        ],
+        "kind": "dashed",
+        "crossing_cost": 3.0,
+        "proximity_weight": 0.15
+      },
+      {
+        "start": [
+          -20.8,
+          0
+        ],
+        "end": [
+          20.8,
+          0
+        ],
+        "kind": "unmarked aisle center",
+        "crossing_cost": 0.8,
+        "proximity_weight": 0.0
+      }
+    ]
+  }
+}

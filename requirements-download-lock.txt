@@ -1,0 +1,2 @@
+zstandard==0.25.0
+ijson==3.4.0.post0

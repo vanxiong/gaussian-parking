@@ -1,0 +1,263 @@
+diff --git a/model/backbone/__init__.py b/model/backbone/__init__.py
+index 7531a72..107e234 100644
+--- a/model/backbone/__init__.py
++++ b/model/backbone/__init__.py
+@@ -1 +1 @@
+-from mmseg.models.backbones import *
++from model.compat import ResNet
+diff --git a/model/encoder/base_encoder.py b/model/encoder/base_encoder.py
+index c218638..2c5f9ef 100644
+--- a/model/encoder/base_encoder.py
++++ b/model/encoder/base_encoder.py
+@@ -1,4 +1,4 @@
+-from mmseg.registry import MODELS
++from mmengine.registry import MODELS
+ from mmengine.model import BaseModule
+ 
+ 
+diff --git a/model/encoder/gaussian_encoder/gaussian_encoder.py b/model/encoder/gaussian_encoder/gaussian_encoder.py
+index e06ad67..4873a50 100644
+--- a/model/encoder/gaussian_encoder/gaussian_encoder.py
++++ b/model/encoder/gaussian_encoder/gaussian_encoder.py
+@@ -1,7 +1,7 @@
+ from typing import List, Optional
+ import torch, torch.nn as nn
+ 
+-from mmseg.registry import MODELS
++from mmengine.registry import MODELS
+ from mmengine import build_from_cfg
+ from ..base_encoder import BaseEncoder
+ 
+diff --git a/model/encoder/gaussian_encoder/gaussian_encoder_3d.py b/model/encoder/gaussian_encoder/gaussian_encoder_3d.py
+index 60c051b..f0f3993 100644
+--- a/model/encoder/gaussian_encoder/gaussian_encoder_3d.py
++++ b/model/encoder/gaussian_encoder/gaussian_encoder_3d.py
+@@ -1,7 +1,7 @@
+ from typing import List, Optional
+ import torch, torch.nn as nn
+ 
+-from mmseg.registry import MODELS
++from mmengine.registry import MODELS
+ from mmengine import build_from_cfg
+ from ..base_encoder import BaseEncoder
+ 
+diff --git a/model/encoder/gaussian_encoder/spconv3d_module.py b/model/encoder/gaussian_encoder/spconv3d_module.py
+index fc21ced..04f9e5d 100644
+--- a/model/encoder/gaussian_encoder/spconv3d_module.py
++++ b/model/encoder/gaussian_encoder/spconv3d_module.py
+@@ -58,7 +58,7 @@ class SparseConv3D(BaseModule):
+                 bs, 1, 1).expand(-1, g, -1).flatten(0, 1),
+             indices], dim=-1)
+         
+-        spatial_shape = indices.max(0)[0]
++        spatial_shape = indices.max(0)[0] + 1
+ 
+         input = spconv.SparseConvTensor(
+             instance_feature.flatten(0, 1), # bg, c
+diff --git a/model/head/base_head.py b/model/head/base_head.py
+index c846edc..dec0d53 100644
+--- a/model/head/base_head.py
++++ b/model/head/base_head.py
+@@ -1,5 +1,5 @@
+ from mmengine.model import BaseModule
+-from mmseg.models import HEADS
++from model.compat import HEADS
+ 
+ @HEADS.register_module()
+ class BaseTaskHead(BaseModule):
+diff --git a/model/head/depth_head.py b/model/head/depth_head.py
+index 609cdf2..b850ec2 100644
+--- a/model/head/depth_head.py
++++ b/model/head/depth_head.py
+@@ -10,7 +10,7 @@
+ #  Modified by Hongyang Li
+ # ---------------------------------------------
+ from operator import index
+-from turtle import down, forward
++# Removed unused turtle import (headless worker has no Tk).
+ import torch
+ import torch.nn as nn
+ import torch.nn.functional as F
+@@ -18,7 +18,7 @@ from mmcv.cnn import build_conv_layer
+ from mmdet.models.backbones.resnet import BasicBlock
+ from torch.cuda.amp.autocast_mode import autocast
+ # from mmdet.models import HEADS # error
+-from mmseg.models import HEADS
++from model.compat import HEADS
+ # from mmcv.runner import force_fp32, auto_fp16 # error
+ from copy import deepcopy
+ import numpy as np
+diff --git a/model/head/gaussian_head.py b/model/head/gaussian_head.py
+index eaa2d86..576794a 100644
+--- a/model/head/gaussian_head.py
++++ b/model/head/gaussian_head.py
+@@ -116,9 +116,18 @@ class GaussianHead(BaseTaskHead):
+ 
+         prediction = []
+         occ_xyz = metas['occ_xyz'].to(self.zero_tensor.device)
+-        occ_label = metas['occ_label'].to(self.zero_tensor.device)
+-        occ_cam_mask = metas['occ_cam_mask'].to(self.zero_tensor.device)
+-        sampled_xyz, sampled_label = self._sampling(occ_xyz, occ_label, None)
++        # Inference queries a geometric grid and must not require ground-truth labels.
++        if 'occ_label' in metas:
++            occ_label = metas['occ_label'].to(self.zero_tensor.device)
++            occ_cam_mask = metas.get('occ_cam_mask')
++            if occ_cam_mask is not None:
++                occ_cam_mask = occ_cam_mask.to(self.zero_tensor.device)
++            sampled_xyz, sampled_label = self._sampling(occ_xyz, occ_label, None)
++        elif not self.training:
++            sampled_xyz = occ_xyz.flatten(1, 3)
++            sampled_label = occ_cam_mask = None
++        else:
++            raise ValueError('Training requires occupancy labels')
+         for idx in apply_loss_layers:
+             gaussians = representation[idx]['gaussian']
+ 
+diff --git a/model/head/localagg/local_aggregate.cu b/model/head/localagg/local_aggregate.cu
+index 2027748..b0f43d9 100644
+--- a/model/head/localagg/local_aggregate.cu
++++ b/model/head/localagg/local_aggregate.cu
+@@ -68,16 +68,16 @@ LocalAggregateCUDA(
+ 		binningFunc,
+ 		imgFunc,
+ 		P, N,
+-		pts.contiguous().data<float>(),
+-		points_int.contiguous().data<int>(),
+-		means3D.contiguous().data<float>(),
+-		means3D_int.contiguous().data<int>(),
+-		opacity.contiguous().data<float>(),
+-		semantics.contiguous().data<float>(),
+-		cov3D.contiguous().data<float>(),
+-		radii.contiguous().data<int>(),
++		pts.contiguous().data_ptr<float>(),
++		points_int.contiguous().data_ptr<int>(),
++		means3D.contiguous().data_ptr<float>(),
++		means3D_int.contiguous().data_ptr<int>(),
++		opacity.contiguous().data_ptr<float>(),
++		semantics.contiguous().data_ptr<float>(),
++		cov3D.contiguous().data_ptr<float>(),
++		radii.contiguous().data_ptr<int>(),
+ 		H, W, D,
+-		out_logits.contiguous().data<float>());
++		out_logits.contiguous().data_ptr<float>());
+ 	
+ 	return std::make_tuple(rendered, out_logits, geomBuffer, binningBuffer, imgBuffer);
+ }
+@@ -113,18 +113,18 @@ LocalAggregateBackwardCUDA(
+ 		reinterpret_cast<char*>(geomBuffer.contiguous().data_ptr()),
+ 		reinterpret_cast<char*>(binningBuffer.contiguous().data_ptr()),
+ 		reinterpret_cast<char*>(imageBuffer.contiguous().data_ptr()),
+-        points_int.contiguous().data<int>(),
+-		voxel2pts.contiguous().data<int>(),
+-		pts.contiguous().data<float>(),
+-		means3D.contiguous().data<float>(),
+-		cov3D.contiguous().data<float>(),
+-		opacities.contiguous().data<float>(),
+-		semantics.contiguous().data<float>(),
+-		out_grad.contiguous().data<float>(),
+-		means3D_grad.contiguous().data<float>(),
+-		opacity_grad.contiguous().data<float>(),
+-		semantics_grad.contiguous().data<float>(),
+-		cov3D_grad.contiguous().data<float>());
++        points_int.contiguous().data_ptr<int>(),
++		voxel2pts.contiguous().data_ptr<int>(),
++		pts.contiguous().data_ptr<float>(),
++		means3D.contiguous().data_ptr<float>(),
++		cov3D.contiguous().data_ptr<float>(),
++		opacities.contiguous().data_ptr<float>(),
++		semantics.contiguous().data_ptr<float>(),
++		out_grad.contiguous().data_ptr<float>(),
++		means3D_grad.contiguous().data_ptr<float>(),
++		opacity_grad.contiguous().data_ptr<float>(),
++		semantics_grad.contiguous().data_ptr<float>(),
++		cov3D_grad.contiguous().data_ptr<float>());
+ 
+ 	return std::make_tuple(means3D_grad, opacity_grad, semantics_grad, cov3D_grad);
+ }
+diff --git a/model/lifter/base_lifter.py b/model/lifter/base_lifter.py
+index 6080ad0..16234ea 100644
+--- a/model/lifter/base_lifter.py
++++ b/model/lifter/base_lifter.py
+@@ -1,4 +1,4 @@
+-from mmseg.registry import MODELS
++from mmengine.registry import MODELS
+ from mmengine.model import BaseModule
+ 
+ 
+diff --git a/model/lifter/gaussian_lifter.py b/model/lifter/gaussian_lifter.py
+index 3a058b3..834b040 100644
+--- a/model/lifter/gaussian_lifter.py
++++ b/model/lifter/gaussian_lifter.py
+@@ -1,5 +1,5 @@
+ import torch, torch.nn as nn
+-from mmseg.registry import MODELS
++from mmengine.registry import MODELS
+ from .base_lifter import BaseLifter
+ from ..utils.safe_ops import safe_inverse_sigmoid, point_cloud_map
+ 
+@@ -247,9 +247,9 @@ class GaussianLifterLiDAR(BaseLifter):
+             if N > Ni:
+                 # randomly sample Ni points from N points
+                 idx = torch.randperm(N)[:Ni]
+-                anchor[batch_idx][idx][:, :3] = voxel_map_coords_logits
++                anchor[batch_idx, idx, :3] = voxel_map_coords_logits
+                 if self.use_intensity:
+-                    anchor[batch_idx][idx][:, 10] = voxel_map_intensity_logits
++                    anchor[batch_idx, idx, 10] = voxel_map_intensity_logits
+             else:
+                 # randomly sample N points from Ni points
+                 idx = torch.randperm(Ni)[:N]
+diff --git a/model/neck/__init__.py b/model/neck/__init__.py
+index 1c0d85e..b09eb58 100644
+--- a/model/neck/__init__.py
++++ b/model/neck/__init__.py
+@@ -1 +1 @@
+-from mmseg.models.necks import *
++from model.compat import FPN
+diff --git a/model/segmentor/base_segmentor.py b/model/segmentor/base_segmentor.py
+index 8385557..84766fc 100644
+--- a/model/segmentor/base_segmentor.py
++++ b/model/segmentor/base_segmentor.py
+@@ -1,5 +1,5 @@
+-from mmseg.models import SEGMENTORS, builder
+-from mmdet3d.registry import MODELS
++from model.compat import SEGMENTORS, builder
++from mmengine.registry import MODELS
+ from mmengine.model import BaseModule
+ 
+ 
+diff --git a/model/segmentor/bev_segmentor.py b/model/segmentor/bev_segmentor.py
+index 24652a1..8712e53 100644
+--- a/model/segmentor/bev_segmentor.py
++++ b/model/segmentor/bev_segmentor.py
+@@ -1,6 +1,6 @@
+ 
+-from mmseg.models import SEGMENTORS
+-from mmseg.models import build_backbone
++from model.compat import SEGMENTORS
++from model.compat import build_backbone
+ 
+ from .base_segmentor import CustomBaseSegmentor
+ 
+diff --git a/model/segmentor/bev_segmentor_lidar_3d.py b/model/segmentor/bev_segmentor_lidar_3d.py
+index 3dc9094..33541a8 100644
+--- a/model/segmentor/bev_segmentor_lidar_3d.py
++++ b/model/segmentor/bev_segmentor_lidar_3d.py
+@@ -1,13 +1,13 @@
+ 
+-from mmseg.models import SEGMENTORS
+-from mmseg.models import build_backbone
+-from mmseg.models import build_head
++from model.compat import SEGMENTORS
++from model.compat import build_backbone
++from model.compat import build_head
+ 
+ from model.utils.grid_mask import GridMask, GridMaskHybrid
+ 
+ from .base_segmentor import CustomBaseSegmentor
+ from mmcv.ops.voxelize import Voxelization
+-from mmdet3d.registry import MODELS
++from mmengine.registry import MODELS
+ import torch
+ from torch.nn import functional as F
+ 

@@ -1,0 +1,17 @@
+numpy==1.26.4
+scipy==1.14.1
+setuptools==78.1.0
+wheel
+ninja
+packaging
+psutil
+mmengine==0.10.7
+mmdet==3.3.0
+spconv-cu126==2.3.8
+opencv-python-headless==4.11.0.86
+pycocotools
+shapely
+terminaltables
+einops
+timm==1.0.15
+pytest

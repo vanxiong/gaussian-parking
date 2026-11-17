@@ -1,0 +1,27 @@
+[
+  {
+    "name": "gaussianformer3d",
+    "path": "GaussianFormer3D",
+    "url": "https://github.com/lunarlab-gatech/GaussianFormer3D.git",
+    "revision": "3ad504d0ad3dac786606f10130b0c5459426a292",
+    "patch": "gaussianformer3d.patch",
+    "overlays": [
+      "model/compat.py"
+    ]
+  },
+  {
+    "name": "dfa3d",
+    "path": "vendor/DFA3D",
+    "url": "https://github.com/IDEA-Research/3D-deformable-attention.git",
+    "revision": "cc38675493eb3343fa66be1924a1739b185464a2",
+    "patch": "dfa3d.patch",
+    "overlays": []
+  },
+  {
+    "name": "mmcv",
+    "path": "vendor/mmcv",
+    "url": "https://github.com/open-mmlab/mmcv.git",
+    "revision": "57c4e25e06e2d4f8a9357c84bcd24089a284dc88",
+    "overlays": []
+  }
+]
