@@ -15,7 +15,9 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / 'GaussianFormer3D'))
 
 
-def build_model(progress=None):
+def build_model(progress=None, anchor_assignment="deterministic"):
+    if anchor_assignment not in ("random", "deterministic"):
+        raise ValueError("anchor_assignment must be random or deterministic")
     progress = progress or (lambda stage: None)
     progress('importing model components')
     import model  # registers the model and compatibility builders
@@ -35,6 +37,7 @@ def build_model(progress=None):
     network.load_state_dict(state, strict=True)
     progress('initializing CUDA weights')
     network.requires_grad_(False).eval().cuda()
+    network.lifter.deterministic_eval = anchor_assignment == "deterministic"
     return network, config, len(state)
 
 
@@ -78,6 +81,9 @@ def infer_arrays(network, config, arrays, queries=None):
     raw = labels.reshape(200,200,16).cpu().numpy().astype(np.uint8)
     confidence = confidence.reshape(200,200,16).cpu().numpy().astype(np.float32)
     stats = {'inference_seconds':elapsed,'peak_cuda_allocated_GB':torch.cuda.max_memory_allocated()/1e9,
+             'anchor_assignment':('canonical_fixed_permutation_v1'
+                                  if not network.lifter.training and network.lifter.deterministic_eval
+                                  else 'random'),
              'lidar_intensity_min_max':[float(arrays['points'][:,3].min()),float(arrays['points'][:,3].max())]}
     return raw,confidence,stats
 
@@ -86,12 +92,13 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('capture', type=Path, nargs='?')
     parser.add_argument('--build-only', action='store_true')
+    parser.add_argument('--anchor-assignment', choices=['random', 'deterministic'], default='deterministic')
     args = parser.parse_args()
     torch.set_num_threads(4)
     torch.manual_seed(42)
     np.random.seed(42)
     started = time.perf_counter()
-    network, config, tensors = build_model()
+    network, config, tensors = build_model(anchor_assignment=args.anchor_assignment)
     print('Strict checkpoint match:', tensors, 'tensors', flush=True)
     (ROOT / 'reports/model_build.json').write_text(json.dumps(
         {'strict_tensor_count': tensors, 'frozen': not any(p.requires_grad for p in network.parameters()),

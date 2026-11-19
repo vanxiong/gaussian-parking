@@ -20,12 +20,19 @@ parser.add_argument('--headless',action='store_true')
 parser.add_argument('--street',action='store_true',help='Start on the street and navigate to the parking destination')
 parser.add_argument('--speed-cap',type=float,default=1.,help='Cruising cap in m/s (0.2 to 6; default 1); tight maneuvers stay slower')
 parser.add_argument('--capture-only',action='store_true')
+parser.add_argument('--stationary-evaluation',action='store_true',help='Pause at the settled starting pose and capture one paired occupancy sample without driving')
+parser.add_argument('--stationary-poses',type=Path,help='JSON list of fixed world x/y/yaw_deg poses, captured sequentially without driving')
+parser.add_argument('--parked-car-appearance',choices=['simple','realistic'],default='simple',help='Appearance-only ablation for all 10 parked cars; collisions and occupancy references stay fixed')
+parser.add_argument('--building',choices=['present','absent'],default='present',help='Parking-lot building presence ablation; removes visuals, colliders and occupancy geometry together')
 parser.add_argument('--evaluation-snapshots',action='store_true',help='Save exact per-capture USD ground truth independently of model inputs')
 parser.add_argument('--blocked-goal',action='store_true')
 parser.add_argument('--start-offset',type=float,default=0.)
 parser.add_argument('--start-y-offset',type=float,default=0.)
 parser.add_argument('--start-yaw-deg',type=float,default=None)
-parser.add_argument('--goal-heading-deg',type=float,default=90.)
+parser.add_argument('--goal-heading-deg',type=float,default=None)
+from parking_spots import SPOTS,DEFAULT_SPOT,get_spot,draw_spots,parking_heading
+parser.add_argument('--parking-spot',type=int,choices=[s['id'] for s in SPOTS],default=DEFAULT_SPOT)
+parser.add_argument('--parking-mode',choices=['front-in','back-in'],default='front-in')
 parser.add_argument('--heading-change-test',action='store_true',help='Automated GUI slider-drag regression')
 parser.add_argument('--pose-controls-test',action='store_true',help='Exercise the GUI placement operation headlessly')
 parser.add_argument('--max-sim-seconds',type=float,default=180.)
@@ -36,15 +43,35 @@ parser.add_argument('--worker-delay',type=float,default=0.,help='Test-only delay
 parser.add_argument('--planner-delay',type=float,default=0.,help='Test-only delay on the first CPU search')
 parser.add_argument('--block-at',type=float,default=-1.,help='Test-only dynamic bay block at simulation time')
 parser.add_argument('--camera-width',type=int,default=640,choices=[480,640,960],help='Camera quality/performance setting; projections scale with resolution')
+parser.add_argument('--prediction-hz',type=float,default=2.,help='Target perception captures per simulation second; actual rate is limited by worker availability')
 from async_parking import align_path, perception_stale
 from system_status import driving_status
 from destination_evidence import destination_state
 args,_=parser.parse_known_args()
+stationary_views=[];stationary_view_index=0;stationary_pose_records=[]
+if args.stationary_poses:
+    if not args.stationary_evaluation or args.street:parser.error('--stationary-poses requires parking-lot --stationary-evaluation')
+    stationary_views=json.loads(args.stationary_poses.read_text())
+    if not stationary_views or len({v['id'] for v in stationary_views})!=len(stationary_views):parser.error('Expected nonempty uniquely named poses')
+    for view in stationary_views:
+        if not all(math.isfinite(float(view[k])) for k in ['x','y','yaw_deg']):parser.error('Pose coordinates must be finite')
+    # The parking scene starts at (-5,-2); later checks use the scene's START.
+    args.start_offset=float(stationary_views[0]['x'])+5.
+    args.start_y_offset=float(stationary_views[0]['y'])+2.
+    args.start_yaw_deg=float(stationary_views[0]['yaw_deg'])
+if args.street and (args.parked_car_appearance!='simple' or args.building!='present'):parser.error('The scene ablations are defined for the parking-lot scene only')
+if args.stationary_evaluation:
+    args.capture_only=True
+    args.evaluation_snapshots=True
+    args.synchronous=True
+if not math.isfinite(args.prediction_hz) or args.prediction_hz<=0:
+    parser.error('--prediction-hz must be finite and greater than zero')
 if args.start_yaw_deg is None:args.start_yaw_deg=90. if args.street else 0.
 OUT=ROOT/'data/driving_runs'/datetime.now(timezone.utc).strftime('%Y%m%dT%H%M%S_%fZ')
 OUT.mkdir(parents=True)
 from isaacsim import SimulationApp
-app=SimulationApp({'headless':args.headless,'width':1600,'height':1000,'multi_gpu':False})
+app=SimulationApp({'headless':args.headless,'width':1600,'height':1000,
+                   'window_width':1920,'window_height':1400,'multi_gpu':False})
 from isaacsim.core.utils.extensions import enable_extension
 enable_extension('omni.physx.vehicle');enable_extension('isaacsim.sensors.physx');app.update()
 from pxr import Gf,Usd,UsdGeom,UsdPhysics,PhysxSchema,Vt
@@ -59,8 +86,25 @@ else:
     INITIAL_YAW=0.
 
 stage,car,colliders,calibration=build(OUT)
+from parked_car_appearance import apply_appearance
+appearance_ablation=apply_appearance(stage,args.parked_car_appearance)
+(OUT/'appearance_ablation.json').write_text(json.dumps(appearance_ablation,indent=2))
+if not args.street:
+    from building_ablation import apply_building_presence
+    building_ablation=apply_building_presence(stage,args.building,colliders)
+else:building_ablation={'presence':'present','factor':'building_presence','applicable':False}
+(OUT/'building_ablation.json').write_text(json.dumps(building_ablation,indent=2))
+for view in stationary_views:
+    obstacle=overlaps([view['x'],view['y'],START[2]],math.radians(view['yaw_deg']),colliders)
+    if obstacle:raise RuntimeError(f'Stationary viewpoint {view["id"]} overlaps {obstacle}')
+if stationary_views:print('STATIONARY_POSES_CLEAR',json.dumps(stationary_views),flush=True)
+selected_spot=args.parking_spot
+parking_mode=args.parking_mode
+spot=get_spot(selected_spot)
+TARGET=(spot['x'],spot['y'],spot['heading'])
+stage.RemovePrim('/World/ParkingTarget')
 placement_settings=[args.start_offset,args.start_y_offset,args.start_yaw_deg]
-final_heading=math.radians(args.goal_heading_deg)
+final_heading=parking_heading(spot,parking_mode) if args.goal_heading_deg is None else math.radians(args.goal_heading_deg)
 desired_heading=final_heading
 placement_drive=True;pose_control_events=[];placement_models=[];placement_error=''
 body=stage.GetPrimAtPath('/World/PhysXCar/Appearance/Body')
@@ -216,12 +260,25 @@ def apply_queued_heading():
     heading_events.append(event);print('HEADING_APPLIED',json.dumps(event),flush=True)
 
 def update_goal_marker():
+    draw_spots(stage,selected_spot)
     curve=UsdGeom.BasisCurves.Define(stage,'/World/DrivingDebug/GoalHeading')
     curve.CreateTypeAttr('linear');curve.CreateCurveVertexCountsAttr([2])
     curve.CreatePointsAttr([Gf.Vec3f(TARGET[0],TARGET[1],.22),
         Gf.Vec3f(TARGET[0]+2*math.cos(desired_heading),TARGET[1]+2*math.sin(desired_heading),.22)])
     curve.CreateWidthsAttr([.09]);curve.SetWidthsInterpolation('constant')
     curve.CreateDisplayColorAttr([Gf.Vec3f(.3,1.,.3)])
+
+def select_parking_spot(number,mode):
+    global selected_spot,TARGET,desired_heading,final_heading,queued_heading,parking_mode
+    spot=get_spot(number)
+    selected_spot=number;TARGET=(spot['x'],spot['y'],spot['heading'])
+    parking_mode=mode
+    desired_heading=final_heading=parking_heading(spot,parking_mode)
+    heading_model.set_value(math.degrees(final_heading))
+    queued_heading=None
+    selected_spot_label.text=f'Active: spot {number} | {spot["row"]} row | {parking_mode}'
+    update_goal_marker();resume()
+    print('PARKING_SPOT_SELECTED',number,parking_mode,flush=True)
 def toggle_debug(name):
     prim=stage.GetPrimAtPath('/World/DrivingDebug/'+name)
     if prim:
@@ -229,8 +286,12 @@ def toggle_debug(name):
         if image.GetVisibilityAttr().Get()=='invisible':image.MakeVisible()
         else:image.MakeInvisible()
 update_goal_marker()
+lidar_view=None
 if not args.headless:
     import omni.ui as ui
+    from lidar_view import LidarView
+    lidar_view=LidarView(lidar_history,car)
+    lidar_view.update()
     status_panel=ui.Window('Driving system status',width=520,height=230)
     with status_panel.frame:
         with ui.VStack(spacing=8):
@@ -244,6 +305,13 @@ if not args.headless:
                 label=ui.Label(status,word_wrap=True,height=60)
                 ui.Label('GaussianFormer3D semantic cost + LiDAR collision clearance',word_wrap=True,height=32)
                 ui.Label('Background inference/planning; brakes if sensor evidence gets stale.',word_wrap=True,height=32)
+                ui.Label('Parking destination | numbered open bays in this scene',word_wrap=True,height=32)
+                spot_picker=ui.ComboBox(selected_spot-1,*[f'{s["id"]} | {s["row"]} row | X {s["x"]:g} m' for s in SPOTS],height=26)
+                ui.Label('Parking style',height=22)
+                parking_mode_picker=ui.ComboBox(1 if parking_mode=='back-in' else 0,'Front-in (drive into bay)','Back-in (reverse into bay)',height=26)
+                selected_spot_label=ui.Label(f'Active: spot {selected_spot} | {get_spot(selected_spot)["row"]} row | {parking_mode}',height=26)
+                ui.Button('Park in selected spot',clicked_fn=lambda:enqueue_control(select_parking_spot,spot_picker.model.get_item_value_model().as_int+1,'back-in' if parking_mode_picker.model.get_item_value_model().as_int else 'front-in'),height=28)
+                ui.Label('Open in the scene layout; LiDAR still checks for obstacles.',word_wrap=True,height=32)
                 ui.Label('Cruising speed cap (m/s); turns / parking slow down',word_wrap=True,height=32)
                 speed_model=ui.FloatSlider(min=.2,max=MAX_CRUISING_SPEED_MPS,height=24).model;speed_model.set_value(cap)
                 def change_speed(model):
@@ -268,15 +336,26 @@ if not args.headless:
                 heading_model=ui.FloatSlider(min=-180,max=180,height=24).model
                 heading_model.set_value(math.degrees(final_heading));heading_model.add_value_changed_fn(heading_changed)
                 heading_model.add_begin_edit_fn(heading_begin_edit);heading_model.add_end_edit_fn(heading_end_edit)
-                ui.Label('One final destination. Green line marks the desired parking heading.',word_wrap=True,height=34)
+                ui.Label('Green outline marks the selected bay; arrow marks parking heading.',word_wrap=True,height=34)
                 ui.Button('Stop',clicked_fn=lambda:enqueue_control(stop),height=26)
                 ui.Button('Replan from current position / resume',clicked_fn=lambda:enqueue_control(resume),height=26)
                 ui.Button('Block parking bay and replan',clicked_fn=lambda:(enqueue_control(add_block),enqueue_control(resume)),height=26)
                 ui.Button('Remove test block and replan',clicked_fn=lambda:enqueue_control(remove_block),height=26)
                 ui.Button('Overview',clicked_fn=lambda:enqueue_control(viewport.set_active_camera,'/World/Overview'),height=26)
+                ui.Button('Show surround cameras + LiDAR',clicked_fn=lambda:enqueue_control(lidar_view.show),height=26)
+                def restore_layout():
+                    from workspace_layout import schedule_driving_layout
+                    global layout_task
+                    lidar_view.show();panel.visible=True;status_panel.visible=True
+                    layout_task=schedule_driving_layout(lidar_view.window,panel,status_panel)
+                ui.Button('Restore driving layout',clicked_fn=lambda:enqueue_control(restore_layout),height=26)
                 ui.Button('Toggle GaussianFormer3D evidence (purple)',clicked_fn=lambda:enqueue_control(toggle_debug,'GaussianEvidence'),height=26)
                 ui.Button('Toggle LiDAR obstacles (yellow)',clicked_fn=lambda:enqueue_control(toggle_debug,'LidarEvidence'),height=26)
                 ui.Button('Toggle rejected clearance (red / amber)',clicked_fn=lambda:enqueue_control(toggle_debug,'RejectedClearance'),height=26)
+
+if not args.headless:
+    from workspace_layout import schedule_driving_layout
+    layout_task=schedule_driving_layout(lidar_view.window,panel,status_panel)
 
 slider_test_finished=False
 if args.heading_change_test:
@@ -335,6 +414,8 @@ def submit_capture():
         if image.std()<2:raise RuntimeError('Blank RGB capture')
         snapshots.append((record['name'],image));digest.update(image.tobytes())
         rp.hydra_texture.set_updates_enabled(False)
+    if lidar_view is not None:
+        lidar_view.update_cameras(snapshots,float(world.current_time))
     after=np.array(UsdGeom.XformCache().GetLocalToWorldTransform(car)).T
     if not np.allclose(ego,after,atol=1e-6,rtol=0):raise RuntimeError('Vehicle moved during synchronized RGB/LiDAR snapshot')
     current=pose()[2];sensor_digest=digest.hexdigest()
@@ -342,6 +423,9 @@ def submit_capture():
         raise RuntimeError('RGB annotations did not refresh while the car moved')
     last_sensor_digest=sensor_digest;last_sensor_pose=current.copy()
     metadata={'world_from_ego':ego.tolist(),'cameras':cameras,'lidar':lidar_metadata,
+              'appearance_ablation':appearance_ablation,
+              'building_ablation':building_ablation,
+              'stationary_view':stationary_views[stationary_view_index] if stationary_views else None,
               'simulation_seconds':elapsed,'simulation_timestamp_seconds':float(world.current_time),
               'capture_mode':'synchronized zero-delta RGB/LiDAR snapshot; background model inference'}
     if args.evaluation_snapshots:
@@ -430,8 +514,9 @@ def submit_planning():
     plan_id+=1
     goal=[TARGET[0]-1.35*math.cos(desired_heading),TARGET[1]-1.35*math.sin(desired_heading),desired_heading]
     request={'id':plan_id,'capture':str(latest_map_directory),'start':pose()[2].tolist(),'goal':goal,'footprint':footprint,
+             'terminal_direction':-1 if parking_mode=='back-in' else 1,
              'test_delay':args.planner_delay if plan_id==1 else 0.,'timeout':40.,'road_layout':str(ROOT/'road_layout.json')}
-    if not args.street:request.pop('road_layout',None)
+    if not args.street:request['road_layout']=str(ROOT/'parking_layout.json')
     planning_pending={'id':plan_id,'generation':generation,'wall_time':time.perf_counter(),'request':request}
     planning_requested=False
     planner_process.stdin.write(json.dumps(request)+'\n');planner_process.stdin.flush()
@@ -514,6 +599,36 @@ try:
     if args.pose_controls_test:place_request(False)
     while app.is_running():
         step_started=time.perf_counter()
+        if args.stationary_evaluation:
+            # No physics steps after settling: RGB, LiDAR and USD share this pose.
+            world.pause();inputs()
+            stationary_pose=np.array(UsdGeom.XformCache().GetLocalToWorldTransform(car)).T
+            submit_capture()
+            world.pause()
+            after=np.array(UsdGeom.XformCache().GetLocalToWorldTransform(car)).T
+            if not np.allclose(stationary_pose,after,atol=1e-6,rtol=0):
+                raise RuntimeError('Stationary evaluation pose changed')
+            if not perceptions:raise RuntimeError('Stationary capture produced no prediction')
+            if stationary_views:
+                view=stationary_views[stationary_view_index]
+                actual_xy=stationary_pose[:2,3];actual_yaw=math.atan2(stationary_pose[1,0],stationary_pose[0,0])
+                heading_error=(actual_yaw-math.radians(view['yaw_deg'])+math.pi)%(2*math.pi)-math.pi
+                if np.linalg.norm(actual_xy-[view['x'],view['y']])>.05 or abs(heading_error)>math.radians(.5):raise RuntimeError('Settled pose differs from requested viewpoint')
+                stationary_pose_records.append({'view':view,'capture':str(OUT/f'frame_{frame:03d}'),'world_from_ego':stationary_pose.tolist()})
+                print('STATIONARY_VIEW_CAPTURED',view['id'],frame,flush=True)
+                if stationary_view_index+1<len(stationary_views):
+                    stationary_view_index+=1;view=stationary_views[stationary_view_index]
+                    world.stop();inputs();lidar_history.reset();world.reset();lidar_history.enable()
+                    car.GetAttribute('xformOp:translate').Set(Gf.Vec3d(float(view['x']),float(view['y']),START[2]))
+                    heading=math.radians(view['yaw_deg']);car.GetAttribute('xformOp:orient').Set(Gf.Quatf(math.cos(heading/2),0,0,math.sin(heading/2)))
+                    UsdPhysics.RigidBodyAPI(car).GetVelocityAttr().Set(Gf.Vec3f(0));UsdPhysics.RigidBodyAPI(car).GetAngularVelocityAttr().Set(Gf.Vec3f(0))
+                    for _ in range(240):world.step(render=True);lidar_history.sample()
+                    body_clearance_height=float(UsdGeom.BBoxCache(Usd.TimeCode.Default(),[UsdGeom.Tokens.default_]).ComputeWorldBound(body).ComputeAlignedRange().GetMin()[2])-.01
+                    force_reset=True;needs_sensor_step=False
+                    continue
+            mode='stationary_evaluation'
+            async_stats['frame_seconds'].append(time.perf_counter()-step_started)
+            break
         while not control_commands.empty():
             function,arguments=control_commands.get_nowait();function(*arguments)
         if queued_heading is not None and not heading_editing and time.perf_counter()-heading_changed_at>=.3:
@@ -559,7 +674,7 @@ try:
         if pending and time.perf_counter()-pending['wall_time']>60:raise RuntimeError('Perception worker timeout')
         if args.block_at>=0 and not block_injected and elapsed>=args.block_at:
             add_block();block_injected=True
-        if mode in ('auto','no_safe_path') and not needs_sensor_step and pending is None and (request_replan or elapsed-last_capture>=1.):
+        if mode in ('auto','no_safe_path') and not needs_sensor_step and pending is None and (request_replan or elapsed-last_capture>=1./args.prediction_hz):
             if request_replan:planning_requested=True
             request_replan=False
             submit_capture()
@@ -680,12 +795,18 @@ try:
         if capture_context is not None:UsdGeom.Imageable(debug).MakeInvisible()
         world.step(render=step_index%2==0);elapsed+=1/PHYSICS_HZ;step_index+=1
         lidar_history.sample();needs_sensor_step=False
+        if lidar_view is not None:lidar_view.update()
         async_stats['frame_seconds'].append(time.perf_counter()-step_started)
         time.sleep(max(0.,1/PHYSICS_HZ-(time.perf_counter()-step_started)))
     report={'status':mode,'position_error_m':distance if not args.capture_only else None,'heading_error_deg':math.degrees(angle) if not args.capture_only else None,
+        'appearance_ablation':appearance_ablation,
+        'building_ablation':building_ablation,
+        'stationary_evaluation':args.stationary_evaluation,
+        'fixed_world_from_ego':stationary_pose.tolist() if args.stationary_evaluation and not stationary_views else None,
+        'stationary_views':stationary_pose_records,
         'final_destination':[TARGET[0],TARGET[1],desired_heading],'preset_intermediate_goals':0,'footprint':footprint,'simulation_seconds':elapsed,'trajectory':trajectory,'perception_updates':perceptions,'planning_updates':planning_updates,
         'scenario':'street_to_parking' if args.street else 'parking',
-        'planner_inputs':('pavement layout and lane costs; ' if args.street else '')+'LiDAR obstacles, GaussianFormer3D semantic cost, one final goal, simulator localization; no collider map',
+        'planner_inputs':('pavement layout and lane costs; ' if args.street else 'parking pavement layout; ')+'LiDAR obstacles, GaussianFormer3D semantic cost, one final goal, simulator localization; no collider map',
         'ground_truth_collision_watchdog':True,'collision_audit_obstacle':collision if not args.capture_only else None,
         'body_clearance_height_m':body_clearance_height,
         'pose_control_events':pose_control_events,'heading_events':heading_events,'desired_heading_deg':math.degrees(desired_heading),
@@ -693,6 +814,9 @@ try:
         'safety_mode':'LiDAR-assisted GaussianFormer3D driving; simulator localization',
         'async_mode':not args.synchronous,'capture_mode':'synchronized RGB/LiDAR snapshots','async_metrics':async_stats,
         'controller_hz':PHYSICS_HZ,'viewport_target_hz':PHYSICS_HZ//2,
+        'target_prediction_hz':args.prediction_hz,
+        'parking_spot':selected_spot,
+        'parking_mode':parking_mode,
         'camera_resolution':products[0][0]['resolution'],'cruising_speed_cap_mps':cap,
         'asynchronous_rendering':False,'camera_batch_size':6,
         'peak_speed_mps':max((abs(q['speed']) for q in trajectory),default=0.),

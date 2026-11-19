@@ -29,9 +29,12 @@ def navigation_map(evidence,layout_path):
     return result
 
 
-def plan_to_destination(evidence,footprint,start,goal,layout_path,timeout=40.,coarse_to_fine=True):
+def plan_to_destination(evidence,footprint,start,goal,layout_path,timeout=40.,coarse_to_fine=True,terminal_direction=None):
     state=destination_state(vars(evidence),goal,footprint)
-    path,report=_plan_to_destination(evidence,footprint,start,goal,layout_path,timeout,coarse_to_fine)
+    path,report=_plan_to_destination(evidence,footprint,start,goal,layout_path,timeout,coarse_to_fine,terminal_direction)
+    if path is not None and terminal_direction is not None and int(path[-1,3])!=terminal_direction:
+        path=None;report['reason']='no path with requested parking entry direction'
+    report['requested_terminal_direction']=terminal_direction
     report['destination_state']=state
     report['approach_to_observe']=path is not None and state=='unobserved'
     if path is None and report.get('failure_stage')=='goal':
@@ -41,7 +44,7 @@ def plan_to_destination(evidence,footprint,start,goal,layout_path,timeout=40.,co
     return path,report
 
 
-def _plan_to_destination(evidence,footprint,start,goal,layout_path,timeout,coarse_to_fine):
+def _plan_to_destination(evidence,footprint,start,goal,layout_path,timeout,coarse_to_fine,terminal_direction=None):
     # Reserve additional clearance for the search's discrete cells and yaw bins.
     search_footprint=[footprint[0]+.30,footprint[1]+.30]
     route_map=navigation_map(evidence,layout_path)
@@ -65,12 +68,13 @@ def _plan_to_destination(evidence,footprint,start,goal,layout_path,timeout,coars
         tail=np.tile(np.r_[goal,direction],(count,1))
         tail[:,:2]=np.linspace(start[:2],goal[:2],count)
         tail[:,2]=start[2]+np.linspace(0,turn,count)
-        if all(planner.clearance(p)[0] for p in tail):
+        if (terminal_direction is None or direction==terminal_direction) and all(planner.clearance(p)[0] for p in tail):
             return tail,{'reason':'planned','seconds':time.perf_counter()-begin,'navigation':'single final pose; pavement layout + sensed obstacles',
                 'preset_intermediate_goals':0,'generated_terminal_approach_m':abs(along),'terminal_direction':direction}
     # Prefer the stable long approach, but do not require a 5 m straight corridor.
     attempts=[];rejected=[]
-    for length,direction in [(length,direction) for length in (5.,3.,1.5) for direction in (1,-1)]+[(0.,1)]:
+    directions=(1,-1) if terminal_direction is None else (terminal_direction,)
+    for length,direction in [(length,direction) for length in (5.,3.,1.5) for direction in directions]+[(0.,directions[0])]:
         approach=goal.copy();approach[:2]-=direction*length*axis
         tail=np.c_[np.linspace(approach,goal,max(2,math.ceil(length/.1)+1)),np.full(max(2,math.ceil(length/.1)+1),direction)]
         failure=next((p for p in tail if not planner.clearance(p)[0]),None)
@@ -91,7 +95,7 @@ def _plan_to_destination(evidence,footprint,start,goal,layout_path,timeout,coars
                 prefix,report=planner.plan(start,approach,timeout=min(4.,remaining*.25))
                 report['coarse_attempt']=coarse_report
         attempts.append({'length_m':length,'direction':direction,'planning':dict(report)})
-        if prefix is not None:
+        if prefix is not None and (not curved or terminal_direction is None or int(prefix[-1,3])==terminal_direction):
             route=prefix if curved else np.concatenate([prefix,tail])
             report['generated_terminal_approach_m']=length
             report['terminal_direction']=int(route[-1,3])

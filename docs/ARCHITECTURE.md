@@ -31,6 +31,16 @@ CUDA extensions include MMCV's deformable convolution and voxelization, DFA3D's 
 
 The sparse-lifter assignment was corrected to avoid writing to a temporary produced by chained advanced indexing when fewer LiDAR voxels than Gaussian anchors are present. Sparse tensor dimensions include the maximum coordinate. These changes add no learned parameters and do not train or fine-tune weights.
 
+Evaluation now canonicalizes integer voxel coordinates and uses a private fixed
+permutation for LiDAR-to-Gaussian assignment. This removes global RNG and voxel
+emission order from assignment selection, while preserving the original sparse
+and dense sampling policy and learned fallback anchors. Training retains random
+assignment. The helper is preserved as a dependency overlay, and the lifter
+integration is preserved in the upstream patch and idempotent patch helper.
+This reduces sampling flicker; it does not provide missing sensor evidence or
+eliminate residual GPU nondeterminism. See
+[the paired accuracy and stability checks](../reports/anchor_assignment_fix/RESULTS.md).
+
 ## Display and interpretation
 
 - Purple: model-predicted occupied voxels after confidence, height, radius, and semantic display filters.

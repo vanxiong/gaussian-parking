@@ -16,7 +16,7 @@ def main():
     p=argparse.ArgumentParser();p.add_argument('manifest',type=Path);args=p.parse_args()
     manifest=json.loads(args.manifest.read_text());output=args.manifest.parent
     torch.set_num_threads(4);torch.set_num_interop_threads(1);torch.manual_seed(42);np.random.seed(42)
-    model,config,tensors=build_model();queries=build_queries(config);torch.cuda.synchronize()
+    model,config,tensors=build_model(anchor_assignment=manifest['anchor_assignment']);queries=build_queries(config);torch.cuda.synchronize()
     startup=time.perf_counter()-PROCESS_STARTED
     arrays=prepare(Path(manifest['samples'][0]['capture']))
     warmup=[]
@@ -38,7 +38,7 @@ def main():
     frozen=not any(p.requires_grad for p in model.parameters())
     if tensors!=941 or not frozen:raise RuntimeError('Expected strict frozen pretrained model')
     with (ROOT/'checkpoints/surroundocc_release.pth').open('rb') as stream:checkpoint=hashlib.file_digest(stream,'sha256').hexdigest()
-    report={'model':'GaussianFormer3D','frozen':frozen,'strict_tensor_count':tensors,'checkpoint_sha256':checkpoint,
+    report={'anchor_assignment':manifest['anchor_assignment'],'model':'GaussianFormer3D','frozen':frozen,'strict_tensor_count':tensors,'checkpoint_sha256':checkpoint,
         'device':torch.cuda.get_device_name(),'pytorch':torch.__version__,'startup_seconds':startup,
         'warmup_forwards':manifest['warmup'],'warmup_inference_seconds':warmup,'batch_size':1,
         'timed_forwards':len(timings),'unique_frames':len(manifest['samples']),

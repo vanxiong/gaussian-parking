@@ -49,12 +49,20 @@ def primitive_points(prim):
 def export(scene,output):
     stage=Usd.Stage.Open(str(scene));assert stage
     if UsdGeom.GetStageUpAxis(stage)!='Z' or UsdGeom.GetStageMetersPerUnit(stage)!=1:raise ValueError('Expected Z-up meter scene')
-    cache=UsdGeom.XformCache();objects=[];excluded=[]
+    cache=UsdGeom.XformCache();objects=[];excluded=[];proxy_paths=[];visual_paths=[]
     for prim in stage.Traverse():
         if not prim.IsA(UsdGeom.Gprim):continue
         path=str(prim.GetPath());imageable=UsdGeom.Imageable(prim)
-        if path.startswith(('/World/PhysXCar','/World/EgoVehicle','/World/DrivingDebug','/World/ROSDrivingDebug')) or imageable.ComputeVisibility()=='invisible' or imageable.ComputePurpose() in ['guide','proxy']:
+        ancestor=prim;visual_only=False
+        while ancestor and not ancestor.IsPseudoRoot():
+            if ancestor.GetAttribute('occupancy:excludeFromGroundTruth').Get():visual_only=True;break
+            ancestor=ancestor.GetParent()
+        if visual_only:
+            excluded.append(path);visual_paths.append(path);continue
+        proxy=bool(prim.GetAttribute('occupancy:groundTruthProxy').Get())
+        if path.startswith(('/World/PhysXCar','/World/EgoVehicle','/World/DrivingDebug','/World/ROSDrivingDebug')) or imageable.ComputeVisibility()=='invisible' or (imageable.ComputePurpose() in ['guide','proxy'] and not proxy):
             excluded.append(path);continue
+        if proxy:proxy_paths.append(path)
         points=primitive_points(prim)
         transform=np.asarray(cache.GetLocalToWorldTransform(prim)).T
         world=points@transform[:3,:3].T+transform[:3,3]
@@ -66,6 +74,9 @@ def export(scene,output):
             'excluded':excluded,'known_xy_bounds':[bounds[:,:2].min(0).tolist(),bounds[:,:2].max(0).tolist()],
             'curves':'32 angular segments; spheres 16 latitude bands',
             'mesh_policy':'Benchmark accepts convex mesh solids only; evaluator rejects nonconvex topology.'}
+    report['appearance_reference']={'policy':'shared_simple_car_proxy_v1' if proxy_paths else 'rendered_geometry',
+        'proxy_paths':proxy_paths,'excluded_detailed_visual_paths':visual_paths,
+        'description':'Selected original car shapes retained as explicit occupancy proxies; detailed visual meshes excluded.' if proxy_paths else 'Visible rendered geometry.'}
     ego=stage.GetPrimAtPath('/World/PhysXCar')
     if ego:report['world_from_ego']=np.asarray(cache.GetLocalToWorldTransform(ego)).T.tolist()
     output.parent.mkdir(parents=True,exist_ok=True);output.write_text(json.dumps(report))

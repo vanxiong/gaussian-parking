@@ -1,0 +1,8 @@
+{
+  "description": "Parking-lot pavement connectivity only; no parked-car or obstacle coordinates.",
+  "rectangles": [
+    [-20.8, -4.65, 20.8, 4.65],
+    [-18.2, 4.65, 15.4, 9.9],
+    [-18.2, -9.9, 15.4, -4.65]
+  ]
+}

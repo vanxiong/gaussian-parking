@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+set -eo pipefail
+source "$(dirname "$0")/linux_env.sh"
+"$GF3D_PYTHON" "$GF3D_ROOT/tools/diagnose_stop_predictions.py" --replay

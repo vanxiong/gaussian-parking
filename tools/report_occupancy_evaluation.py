@@ -35,11 +35,16 @@ def main():
     cmap=ListedColormap(['#f2f3f5','#228854','#d94e84','#eaaa35']);cmap.set_bad('#ccd1d8')
     binary_cmap=ListedColormap(['#f2f3f5','#254d86']);binary_cmap.set_bad('#ccd1d8')
     fig,axes=plt.subplots(1,3,figsize=(13,4.2),layout='constrained')
-    for ax,image,title in zip(axes,[t,pred,errors],['USD solid occupancy','GaussianFormer3D argmax','TP green / FP pink / FN amber']):
+    variant=manifest.get('appearance_ablation',{}).get('variant','simple')
+    building_presence=manifest.get('building_ablation',{}).get('presence','present')
+    truth_title='Shared car proxy occupancy' if variant=='realistic' else 'USD solid occupancy'
+    for ax,image,title in zip(axes,[t,pred,errors],[truth_title,'GaussianFormer3D argmax','TP green / FP pink / FN amber']):
         shown=np.ma.masked_where(~slice_mask,image)
         ax.imshow(shown.T,origin='lower',extent=[-50,50,-50,50],cmap=cmap if title.startswith('TP') else binary_cmap,vmin=0,vmax=3 if title.startswith('TP') else 1,interpolation='nearest')
         ax.set(xlim=(-30,30),ylim=(-30,30),xlabel='LiDAR X (m)',ylabel='LiDAR Y (m)',title=title);ax.set_aspect('equal')
-    fig.suptitle(f'Paired occupancy slice near world Z = 1 m; gray area excluded | {capture.name}')
+    summary=' | '.join(f'{label} {100*score[key]:.2f}%' if score[key] is not None else f'{label} undefined'
+                     for label,key in [('3D IoU','occupied_iou'),('Precision','precision'),('Recall','recall')])
+    fig.suptitle(f'{summary}\n{variant} cars; building {building_presence} | Z = 1 m slice; scores use full 3D ROI | {capture.name}')
     fig.savefig(output/'occupancy-comparison.png',dpi=180);plt.close(fig)
     pct=lambda value:'undefined' if value is None else f'{100*value:.2f}%'
     lines=['# GaussianFormer3D — Isaac Sim occupancy evaluation','',
@@ -47,6 +52,19 @@ def main():
         '## Primary: above-ground occupied geometry','',
         '| Metric | Result |','| --- | ---: |']
     for key in ['occupied_iou','precision','recall','f1','voxel_accuracy','all_empty_baseline_accuracy']:lines.append(f'| {key} | {pct(score[key])} |')
+    if manifest.get('stationary_evaluation'):
+        transform=np.asarray(manifest['fixed_world_from_ego'])
+        lines[2]='One stationary synchronized capture in the parking lot; physics paused after settling; frozen model weights.'
+        lines+=['',f"Fixed ego position (world meters): {transform[:3,3].tolist()}; yaw {np.degrees(np.arctan2(transform[1,0],transform[0,0])):.2f} degrees.",
+                '', 'Repeated offline forwards measure timing; they are not independent accuracy samples.']
+    ablation=manifest.get('appearance_ablation')
+    building=manifest.get('building_ablation',{}).get('presence','present')
+    lines+=['',f'Building: **{building}**. Absent removes building visuals, collision/LiDAR geometry and occupancy target together.']
+    if ablation:
+        lines+=['',f"Parked-car appearance: **{ablation['variant']}**. Reference policy: `{ablation.get('ground_truth_policy','rendered_geometry')}`."]
+        if ablation['variant']=='realistic':
+            ids=', '.join(str(i) for i in ablation.get('selected_car_ids',[]))
+            lines+=['',f'Detailed visual sedans replace parked car IDs {ids}. Original simple-car collision/LiDAR shapes and occupancy targets are retained. This measures appearance sensitivity, not exact detailed-mesh reconstruction.']
     lines+=['',f"Confusion totals: TP {score['tp']}, FP {score['fp']}, FN {score['fn']}, TN {score['tn']}. Counts are summed across correlated frames.",'',
         'Voxel accuracy is dominated by free space; occupied IoU, precision and recall are the main scores. The all-empty baseline has zero occupied recall and zero occupied IoU when objects exist.','',
         '## Latency','',f"Device: {latency['device']}. {latency['warmup_forwards']} warm-up forwards, then {latency['timed_forwards']} timed batch-1 forwards ({manifest['repeats']} repetitions per pose). Startup {latency['startup_seconds']:.2f} s is separate.",

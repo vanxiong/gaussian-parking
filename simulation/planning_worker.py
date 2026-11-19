@@ -18,7 +18,7 @@ for line in sys.stdin:
         if request.get('road_layout'):
             from navigation import plan_to_destination
             path,planning=plan_to_destination(evidence,request['footprint'],request['start'],request['goal'],
-                request['road_layout'],timeout=float(request.get('timeout',40.)))
+                request['road_layout'],timeout=float(request.get('timeout',40.)),terminal_direction=request.get('terminal_direction'))
         else:
             planner=Planner(evidence,request['footprint'])
             path,planning=planner.plan(request['start'],request['goal'],timeout=float(request.get('timeout',20.)))

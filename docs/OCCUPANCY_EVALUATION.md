@@ -4,6 +4,35 @@ The project now has a measured geometric occupancy baseline, separate from drivi
 
 ## Run it
 
+The stationary launcher accepts `--parked-car-appearance simple` (default) or
+`--parked-car-appearance realistic` for an all-10-parked-car visual ablation. Both use
+identical original car collision and occupancy reference shapes. The detailed
+variant is explicitly labeled as a shared-proxy appearance test; see
+[car appearance ablation](CAR_APPEARANCE_ABLATION.md) for commands and scope.
+
+For the all-realistic-car building-present/absent comparison, use
+`evaluation\evaluate_building_ablation.bat --repeats 20 --anchor-assignment random`. See
+[building ablation](BUILDING_ABLATION.md) for per-scene versus identical-target
+score scopes and the `--building present|absent` toggle.
+
+For a fresh stationary parking-lot evaluation, run from `gaussian_parking`:
+
+```powershell
+.\evaluation\evaluate_stationary.bat
+```
+
+The car settles at the default parking-lot starting position, then physics pauses.
+One synchronized six-camera/LiDAR capture and independent USD snapshot are saved;
+no driving or path search is performed. The existing evaluator replays the capture
+and reports occupied IoU, precision, recall, and `occupancy-comparison.png` (a
+horizontal slice near world height 1 m, not a projection of the full 3D score).
+The report records the fixed world pose. `--start-offset`, `--start-y-offset`
+(meters relative to the default start), and `--start-yaw-deg` select another pose.
+Capture logs are in `reports/stationary-capture.log`; evaluation outputs and
+`reports/evaluation/latest.json` use the same format as the existing evaluator.
+Offline timing repeats do not add independent accuracy observations. The primary
+score retains the existing full-geometry, occlusion-inclusive protocol below.
+
 From `gaussian_parking`, capture paired camera/LiDAR inputs and exact per-frame USD snapshots:
 
 ```powershell
@@ -68,6 +97,31 @@ Offline pipeline timing excludes scene rendering, model loading, output saving a
 Evidence: [full report](../reports/evaluation/20261116T001548_636462Z/REPORT.md), [accuracy](../reports/evaluation/20261116T001548_636462Z/accuracy.json), [latency](../reports/evaluation/20261116T001548_636462Z/latency.json), and [comparison figure](../reports/evaluation/20261116T001548_636462Z/occupancy-comparison.png). UTC-based directory names can fall on November 16 while the local evaluation date is November 15.
 
 ## Verification and next experiments
+
+The deterministic evaluation assignment change is measured separately in
+[anchor assignment results](../reports/anchor_assignment_fix/RESULTS.md).
+Historical scores above and the earlier ablation reports used randomized
+assignment and remain archived under that policy. Reproduce the new comparison
+from WSL after dependency setup:
+
+```bash
+bash tools/evaluate_anchor_assignment.sh
+python tools/summarize_anchor_assignment.py
+```
+
+The exact multiview ablation baseline (realistic cars, building present,
+640x360, eleven sweeps) also has a separate 20-repeat comparison at each of
+the four original viewpoints:
+[baseline IoU rerun](../reports/anchor_assignment_baseline/RESULTS.md).
+Reproduce it with `bash tools/evaluate_anchor_baseline.sh` in WSL. It compares
+fresh randomized and deterministic inference against the archived baseline,
+using identical saved sensor inputs and raw-argmax scoring.
+
+The comparison replays four existing viewpoints with simple and realistic cars,
+uses unchanged raw-argmax geometric accuracy scoring, and measures repeatability
+with the unchanged overlay filters. It also checks ten actual consecutive
+stopped captures. Restart the scene's model worker to load the updated inference
+code; an already running worker keeps its previously imported implementation.
 
 Nine numerical tests cover thin-object intersection, solid interiors, triangle intersection rejection, coordinate rotation/translation, ROI exclusion, confusion arithmetic, undefined denominators, perfect predictions and the all-empty baseline. Run them in WSL after sourcing `tools/linux_env.sh`:
 

@@ -41,6 +41,11 @@ def main():
             'confidence_threshold':'0.35 reported only as a secondary fixed visualization policy; no threshold tuning'},
         'aggregate':{name:metrics(value) for name,value in totals.items()},'frames':frames,
         'evaluation_wall_seconds':time.perf_counter()-started,'limitations':manifest['limitations']}
+    report['appearance_ablation']=manifest.get('appearance_ablation',{'variant':'simple'})
+    report['building_ablation']=manifest.get('building_ablation',{'presence':'present'})
+    if report['appearance_ablation']['variant']=='realistic':
+        report['ground_truth']='USD filled convex solids; selected cars use shared original simple-car proxies, detailed visuals excluded'
+        report['protocol']['appearance_reference']='shared_simple_car_proxy_v1; appearance-only experiment; collision and LiDAR geometry unchanged'
     (output/'accuracy.json').write_text(json.dumps(report,indent=2));print(json.dumps(report['aggregate'],indent=2))
 
 if __name__=='__main__':main()

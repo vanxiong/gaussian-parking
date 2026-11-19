@@ -1,0 +1,28 @@
+{
+  "source_url": "https://www.innerscene.com/tools/library/3d-parts/sedan-car-42109739",
+  "license": "CC0-1.0",
+  "source_sha256": "187c9935c40f952837fe2d98200b390415e695196d7b1280c9ec3ebb1bf4961b",
+  "usd_sha256": "5d4987ab14a4f525b995f1b219e2e948174cf262cbb02518fd5c71651650f4a8",
+  "source_bounds_xyz": [
+    [
+      -2.3479999350383878,
+      -1.160000041127205,
+      0.0
+    ],
+    [
+      2.3479999350383878,
+      1.160000041127205,
+      1.4800000190734863
+    ]
+  ],
+  "normalized_size_xyz": [
+    4.6959998700767756,
+    2.32000008225441,
+    1.4800000190734863
+  ],
+  "mesh_count": 73,
+  "triangles": 16300,
+  "paint_material": "Looks/Mat2",
+  "axes": "X forward, Y left, Z up; centered XY; bottom at Z=0; meters",
+  "ground_truth": "Appearance-only ablation uses original simple-car geometry and collision shapes in both variants."
+}

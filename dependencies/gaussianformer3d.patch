@@ -185,18 +185,38 @@ index 6080ad0..16234ea 100644
  
  
 diff --git a/model/lifter/gaussian_lifter.py b/model/lifter/gaussian_lifter.py
-index 3a058b3..834b040 100644
+index 3a058b3..2631cbb 100644
 --- a/model/lifter/gaussian_lifter.py
 +++ b/model/lifter/gaussian_lifter.py
-@@ -1,5 +1,5 @@
+@@ -1,7 +1,8 @@
  import torch, torch.nn as nn
 -from mmseg.registry import MODELS
 +from mmengine.registry import MODELS
  from .base_lifter import BaseLifter
  from ..utils.safe_ops import safe_inverse_sigmoid, point_cloud_map
++from .anchor_assignment import evaluation_assignment
  
-@@ -247,9 +247,9 @@ class GaussianLifterLiDAR(BaseLifter):
-             if N > Ni:
+ 
+ @MODELS.register_module()
+@@ -220,6 +221,7 @@ class GaussianLifterLiDAR(BaseLifter):
+         )
+         self.use_intensity = use_intensity
+         self.occ_annotation = occ_annotation
++        self.deterministic_eval = True
+ 
+     def init_weight(self):
+         self.anchor.data = self.anchor.data.new_tensor(self.anchor_init)
+@@ -244,12 +246,17 @@ class GaussianLifterLiDAR(BaseLifter):
+ 
+             N = anchor.shape[1]
+             Ni = voxel_map_coords_logits.shape[0]
+-            if N > Ni:
++            if not self.training and self.deterministic_eval:
++                destination, source = evaluation_assignment(coors_batch[batch_mask, 1:], N)
++                anchor[batch_idx, destination, :3] = voxel_map_coords_logits[source]
++                if self.use_intensity:
++                    anchor[batch_idx, destination, 10] = voxel_map_intensity_logits[source]
++            elif N > Ni:
                  # randomly sample Ni points from N points
                  idx = torch.randperm(N)[:Ni]
 -                anchor[batch_idx][idx][:, :3] = voxel_map_coords_logits

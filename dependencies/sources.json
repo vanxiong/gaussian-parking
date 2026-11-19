@@ -6,7 +6,8 @@
     "revision": "3ad504d0ad3dac786606f10130b0c5459426a292",
     "patch": "gaussianformer3d.patch",
     "overlays": [
-      "model/compat.py"
+      "model/compat.py",
+      "model/lifter/anchor_assignment.py"
     ]
   },
   {
