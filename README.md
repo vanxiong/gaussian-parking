@@ -30,9 +30,19 @@ Double-click either BAT. Both run directly through Isaac Sim, a frozen GaussianF
 The GUI provides stop/resume, replan, reset, destination heading and obstacle controls. The default speed cap is 1 m/s. Yellow markers show simulated LiDAR evidence; purple markers show predicted occupancy. LiDAR supplies hard clearance checks, the model supplies semantic route costs, and simulator poses provide localization. Successful parking does not establish occupancy accuracy or real-car readiness.
 
 Both driving scenes also open a **Sensor views | surround cameras + LiDAR** window.
-Six labeled camera tiles show the latest synchronized model input: front-left,
+Six labeled camera tiles show the latest completed model input: front-left,
 front, front-right above back-left, back, back-right. They refresh at the existing
 perception capture rate, with capture age displayed separately from live LiDAR age.
+The sensor window's **Show model labels** checkbox toggles large class names
+(confidence at least 0.35), without voxel dots or boxes around objects. With labels
+on, the latest completed prediction and its matching camera image remain visible
+until the next result arrives. With labels off, tiles show the latest raw capture.
+Capture age reflects the displayed image. Labels are model predictions, not
+simulator labels or individual object detections.
+Use **Camera view** to switch between **All six cameras** and a larger view of
+front-left, front, front-right, back-left, back or back-right. LiDAR stays visible
+alongside either layout. Switching views uses the existing images and does not
+change sensor capture, model inputs or evaluation.
 The right-hand plot shows the latest raw scan relative to the car (forward up,
 30 m range). Rings mark distance; gray
 returns are low, yellow returns are above 0.25 m, and blue returns are above 2 m
@@ -60,6 +70,23 @@ Perception targets 2 captures per simulation second by default. Only one request
 is processed at a time, so a slower worker reduces the actual rate instead of
 building a queue. Pass `--prediction-hz 1` to either launcher to restore the
 previous rate. Higher capture rates add rendering, transfer and processing work.
+
+Normal driving uses a separate headless sensor-rendering process. The driving
+process snapshots the car pose, LiDAR and dynamic parking blocker, then continues
+physics and viewport updates while the sensor process renders all six cameras at
+that frozen pose. Camera transforms are checked against the LiDAR snapshot. Dots
+remain visible in the driving viewport and are excluded from the sensor scene.
+Only one capture/inference request is outstanding, so no backlog accumulates.
+Rendering still shares the GPU with the viewport and model; this removes blocking
+camera readbacks from the driving thread, rather than guaranteeing constant FPS.
+The additional renderer uses more GPU memory and adds startup time. Its log is
+`sensor_renderer.log` in the driving-run directory. `--synchronous` and stationary
+evaluation retain the original in-process synchronized capture for comparisons.
+Timing reports separate driving-thread submission (`capture_seconds`) from
+background rendering (`sensor_render_seconds`), and count physics/moving steps
+while sensor capture is pending. Model-label overlays are prepared on the result
+reader thread; only their display is updated on the driving thread. For a bounded
+GUI performance check, pass `--timing-test --max-sim-seconds 20`.
 
 ## Folder layout
 

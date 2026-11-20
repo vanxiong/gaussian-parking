@@ -36,6 +36,7 @@ parser.add_argument('--parking-mode',choices=['front-in','back-in'],default='fro
 parser.add_argument('--heading-change-test',action='store_true',help='Automated GUI slider-drag regression')
 parser.add_argument('--pose-controls-test',action='store_true',help='Exercise the GUI placement operation headlessly')
 parser.add_argument('--max-sim-seconds',type=float,default=180.)
+parser.add_argument('--timing-test',action='store_true',help='Exit the GUI after max-sim-seconds and save frame timings')
 parser.add_argument('--screenshot',action='store_true')
 parser.add_argument('--synchronous',action='store_true',help='Wait for each perception result (comparison mode)')
 parser.add_argument('--max-perception-age',type=float,default=8.,help='Maximum capture age in wall seconds')
@@ -172,10 +173,19 @@ for camera in calibration['cameras']:
     scale=args.camera_width/camera['resolution'][0]
     camera['resolution']=[args.camera_width,round(camera['resolution'][1]*scale)]
     intrinsic=np.asarray(camera['K']).copy();intrinsic[:2]*=scale;camera['K']=intrinsic.tolist()
-    rp=rep.create.render_product(camera['path'],tuple(camera['resolution']))
-    rgb=rep.AnnotatorRegistry.get_annotator('rgb')
-    rgb.attach([rp]);products.append((camera,rp,rgb,None))
-    rp.hydra_texture.set_updates_enabled(False)
+    if args.synchronous:
+        rp=rep.create.render_product(camera['path'],tuple(camera['resolution']))
+        rgb=rep.AnnotatorRegistry.get_annotator('rgb')
+        rgb.attach([rp]);rp.hydra_texture.set_updates_enabled(False)
+    else:rp=rgb=None
+    products.append((camera,rp,rgb,None))
+
+sensor_renderer=None
+if not args.synchronous:
+    from background_capture import BackgroundCapture
+    sensor_scene=OUT/'sensor_scene.usdc'
+    stage.Flatten().Export(str(sensor_scene))
+    sensor_renderer=BackgroundCapture(PROJECT,OUT,sensor_scene,[p[0] for p in products])
 
 def linux_path(path):
     value=Path(path).resolve().as_posix()
@@ -185,16 +195,46 @@ worker=subprocess.Popen(['wsl.exe','--distribution','Ubuntu-24.04','--exec','bas
     stdin=subprocess.PIPE,stdout=subprocess.PIPE,stderr=subprocess.STDOUT,text=True,bufsize=1,encoding='utf-8',errors='replace',
     creationflags=subprocess.CREATE_NO_WINDOW)
 mailbox=queue.Queue()
+prepared_predictions={}
+prepared_results={}
+status_writes=queue.Queue(maxsize=1)
+
+def status_writer():
+    while True:
+        value=status_writes.get()
+        if value is None:return
+        (OUT/'live_status.json').write_text(value)
+
+threading.Thread(target=status_writer,daemon=True).start()
 control_commands=queue.Queue()
 queued_heading=None;heading_changed_at=0.;heading_editing=False;heading_events=[]
 def reader():
     with (OUT/'model_worker.log').open('w',encoding='utf-8') as log:
-        for line in worker.stdout:log.write(line);log.flush();mailbox.put(line)
+        for line in worker.stdout:
+            log.write(line);log.flush()
+            # Projection, sorting and label drawing are CPU work, with no USD or
+            # UI access. Prepare them here instead of stalling the driving loop.
+            if line.startswith('WORKER_RESULT '):
+                response=json.loads(line[len('WORKER_RESULT '):])
+                if not response.get('error'):
+                    directory=OUT/f"frame_{response['id']:03d}"
+                    with np.load(directory/'costmap.npz',allow_pickle=False) as saved:costmap_result=dict(saved)
+                    result_labels=np.load(directory/'labels.npy',allow_pickle=False)
+                    result_confidence=np.load(directory/'confidence.npy',allow_pickle=False)
+                    prepared_results[response['id']]=(costmap_result,result_labels,result_confidence)
+                    if not args.headless:
+                        metadata=json.loads((directory/'capture.json').read_text())
+                        snapshots=[(c['name'],np.asarray(Image.open(directory/c['image']).convert('RGB'))) for c in metadata['cameras']]
+                        from camera_semantics import overlay_predictions
+                        compact=[]
+                        annotated=overlay_predictions(snapshots,metadata,
+                            result_labels,result_confidence,np.asarray(response['world_from_reference']),compact_result=compact)
+                        prepared_predictions[response['id']]=(annotated,compact)
+            mailbox.put(line)
 planner_process=subprocess.Popen([str(PROJECT/'.venv/Scripts/python.exe'),str(ROOT/'planning_worker.py')],cwd=ROOT,
     stdin=subprocess.PIPE,stdout=subprocess.PIPE,stderr=subprocess.STDOUT,text=True,bufsize=1,encoding='utf-8',errors='replace',
     creationflags=subprocess.CREATE_NO_WINDOW)
 planner_mailbox=queue.Queue()
-capture_context=None
 def planner_reader():
     with (OUT/'planning_worker.log').open('w',encoding='utf-8') as log:
         for line in planner_process.stdout:log.write(line);log.flush();planner_mailbox.put(line)
@@ -206,15 +246,15 @@ mode='auto';request_replan=True;restart=False;force_reset=True
 cap=max(.2,min(MAX_CRUISING_SPEED_MPS,args.speed_cap));frame=0;elapsed=0.;last_capture=-100.;trajectory=[];perceptions=[]
 pending=None;generation=0;map_sim_time=None;map_wall_time=None;needs_sensor_step=True
 last_sensor_digest=None;last_sensor_pose=None
-async_stats={'physics_steps_while_pending':0,'moving_steps_while_pending':0,'stale_brake_steps':0,'discarded_paths':0,'capture_seconds':[],'result_latencies':[],'frame_seconds':[],'readback_seconds':[]}
+async_stats={'physics_steps_while_pending':0,'moving_steps_while_pending':0,'physics_steps_during_capture':0,'moving_steps_during_capture':0,'stale_brake_steps':0,'discarded_paths':0,'capture_seconds':[],'camera_tick_seconds':[],'sensor_render_seconds':[],'result_latencies':[],'frame_seconds':[],'readback_seconds':[]}
 path=None;costmap=None;previous=np.array(pose()[0]);previous_delta=0.;speed_integral=0.;previous_desired=0.
 def resume():
     global needs_sensor_step
     needs_sensor_step=True
-    global request_replan,mode,path,generation,costmap,map_sim_time,map_wall_time,planning_requested,capture_context,last_failed_plan_directory,planning_diagnostic
+    global request_replan,mode,path,generation,costmap,map_sim_time,map_wall_time,planning_requested,last_failed_plan_directory,planning_diagnostic
     planning_diagnostic=''
     if stage.GetPrimAtPath('/World/DrivingDebug/RejectedClearance'):stage.RemovePrim('/World/DrivingDebug/RejectedClearance')
-    capture_context=None;last_failed_plan_directory=None
+    last_failed_plan_directory=None
     generation+=1;costmap=None;map_sim_time=map_wall_time=None
     request_replan=True;planning_requested=True;mode='auto';path=None;inputs()
     if not world.is_playing():world.play()
@@ -222,8 +262,7 @@ def stop():
     global mode
     mode='stopped';inputs()
 def place_request(drive=False,original=False):
-    global restart,placement_drive,desired_heading,capture_context
-    capture_context=None
+    global restart,placement_drive,desired_heading
     desired_heading=final_heading
     update_goal_marker()
     stop();placement_drive=drive
@@ -389,8 +428,66 @@ def wait_for(prefix,timeout=180.):
         app.update();time.sleep(.002)
     raise RuntimeError('Model worker timeout')
 
+def submit_background_capture():
+    global frame,pending,last_capture,force_reset,status
+    started=time.perf_counter()
+    frame+=1;directory=OUT/f'frame_{frame:03d}';directory.mkdir()
+    cache=UsdGeom.XformCache();ego=np.array(cache.GetLocalToWorldTransform(car)).T
+    lidar_points,lidar_metadata=lidar_history.snapshot(ego)
+    cameras=[]
+    for record,_,_,_ in products:
+        optical=np.array(cache.GetLocalToWorldTransform(stage.GetPrimAtPath(record['path']))).T@np.diag([1,-1,-1,1])
+        local=np.linalg.inv(ego)@optical;k=np.asarray(record['K'])
+        cameras.append({'name':record['name'],'image':record['name']+'.png','resolution':record['resolution'],
+                        'intrinsic':k.tolist(),'ego_from_optical':local.tolist(),
+                        'projection_from_ego':(k@np.linalg.inv(local)[:3]).tolist(),
+                        'simulation_timestamp_seconds':float(world.current_time)})
+    metadata={'world_from_ego':ego.tolist(),'cameras':cameras,'lidar':lidar_metadata,
+              'appearance_ablation':appearance_ablation,'building_ablation':building_ablation,
+              'stationary_view':None,'simulation_seconds':elapsed,
+              'simulation_timestamp_seconds':float(world.current_time),
+              'capture_mode':'isolated renderer; synchronized frozen-pose RGB/LiDAR snapshot',
+              'camera_time_span_seconds':0.}
+    if args.evaluation_snapshots:
+        stage.GetRootLayer().Export(str(directory/'scene.usda'))
+        metadata['ground_truth_snapshot']={'scene':'scene.usda','timestamp':float(world.current_time),'used_as_model_input':False}
+    current=pose()[2]
+    request={'id':frame,'capture':str(directory),'start':current.tolist(),'footprint':footprint,
+             'body_clearance_height':body_clearance_height,'reset':force_reset,
+             'test_delay':args.worker_delay if frame==2 else 0.}
+    block=stage.GetPrimAtPath('/World/TestParkingBlock')
+    sensor_request={'id':frame,'capture':str(directory),'world_from_ego':ego.tolist(),
+                    'cameras':cameras,
+                    'block':np.array(cache.GetLocalToWorldTransform(block)).T.tolist() if block else None}
+    pending={'id':frame,'directory':directory,'generation':generation,'sim_time':elapsed,'wall_time':started,
+             'snapshots':None,'metadata':metadata,'model_request':request,'sensor_pending':True}
+    force_reset=False;last_capture=elapsed;status=f'BACKGROUND SENSOR CAPTURE | frame {frame}'
+    sensor_renderer.submit(sensor_request,metadata,lidar_points)
+    async_stats['capture_seconds'].append(time.perf_counter()-started)
+
+
+def accept_sensor_response(response):
+    global last_sensor_digest,last_sensor_pose
+    if response.get('error'):raise RuntimeError('Sensor renderer: '+response['error'])
+    if pending is None or response['id']!=pending['id']:raise RuntimeError('Unexpected sensor result ID')
+    snapshots=response['snapshots']
+    digest=hashlib.sha256()
+    for _,image in snapshots:digest.update(image.tobytes())
+    current=np.array(pending['model_request']['start'])
+    if digest.hexdigest()==last_sensor_digest and last_sensor_pose is not None and np.linalg.norm(current[:2]-last_sensor_pose[:2])>.15:
+        raise RuntimeError('RGB annotations did not refresh while the car moved')
+    last_sensor_digest=digest.hexdigest();last_sensor_pose=current
+    pending['snapshots']=snapshots;pending['sensor_pending']=False
+    async_stats['sensor_render_seconds'].append(response['seconds'])
+    if lidar_view is not None:lidar_view.update_cameras(snapshots,pending['metadata']['simulation_timestamp_seconds'])
+    worker.stdin.write(json.dumps(pending['model_request'])+'\n');worker.stdin.flush()
+
+
 def submit_capture():
     global frame,status,force_reset,last_capture,pending,last_sensor_digest,last_sensor_pose
+    if not args.synchronous:
+        submit_background_capture()
+        return
     capture_started=time.perf_counter()
     frame+=1;directory=OUT/f'frame_{frame:03d}';directory.mkdir()
     if args.synchronous:world.pause()
@@ -404,8 +501,18 @@ def submit_capture():
         local=np.linalg.inv(ego)@optical;k=np.asarray(record['K'])
         cameras.append({'name':record['name'],'image':record['name']+'.png','resolution':record['resolution'],
                         'intrinsic':k.tolist(),'ego_from_optical':local.tolist(),
-                        'projection_from_ego':(k@np.linalg.inv(local)[:3]).tolist()})
-    rep.orchestrator.step(delta_time=0.,rt_subframes=1,pause_timeline=args.synchronous)
+                        'projection_from_ego':(k@np.linalg.inv(local)[:3]).tolist(),
+                        'simulation_timestamp_seconds':float(world.current_time)})
+    # Keep the displayed viewport (including evidence dots) intact while the
+    # sensor cameras render the clean scene. Never publish a dot-free viewport.
+    viewport_updates=viewport.updates_enabled
+    viewport.updates_enabled=False
+    try:
+        if args.synchronous:
+            rep.orchestrator.step(delta_time=0.,rt_subframes=1,pause_timeline=True)
+    finally:
+        UsdGeom.Imageable(debug).MakeVisible()
+        viewport.updates_enabled=viewport_updates
     snapshots=[];digest=hashlib.sha256()
     for record,rp,rgb,_ in products:
         pixels=np.asarray(rgb.get_data())
@@ -427,7 +534,8 @@ def submit_capture():
               'building_ablation':building_ablation,
               'stationary_view':stationary_views[stationary_view_index] if stationary_views else None,
               'simulation_seconds':elapsed,'simulation_timestamp_seconds':float(world.current_time),
-              'capture_mode':'synchronized zero-delta RGB/LiDAR snapshot; background model inference'}
+              'capture_mode':'synchronized zero-delta RGB/LiDAR snapshot',
+              'camera_time_span_seconds':0.}
     if args.evaluation_snapshots:
         gt_started=time.perf_counter()
         stage.GetRootLayer().Export(str(directory/'scene.usda'))
@@ -437,7 +545,8 @@ def submit_capture():
              'body_clearance_height':body_clearance_height,'reset':force_reset,
              'test_delay':args.worker_delay if frame==2 else 0.}
     force_reset=False;status=f'BACKGROUND GAUSSIANFORMER3D | frame {frame}'
-    pending={'id':frame,'directory':directory,'generation':generation,'sim_time':elapsed,'wall_time':capture_started}
+    pending={'id':frame,'directory':directory,'generation':generation,'sim_time':elapsed,'wall_time':capture_started,
+             'snapshots':snapshots,'metadata':metadata}
     last_capture=elapsed
     def save_and_send():
         try:
@@ -458,6 +567,8 @@ def submit_capture():
 
 def accept_response(response):
     global path,costmap,pending,map_sim_time,map_wall_time,mode,request_replan,latest_map_directory,planning_requested
+    annotated=prepared_predictions.pop(response.get('id'),None)
+    prepared=prepared_results.pop(response.get('id'),None)
     job=pending;pending=None
     if job is None or response.get('id')!=job['id']:raise RuntimeError('Unexpected worker result ID')
     if job['generation']!=generation:return
@@ -465,7 +576,8 @@ def accept_response(response):
     directory=job['directory'];perceptions.append(response)
     latency=time.perf_counter()-job['wall_time'];response['latency_wall_seconds']=latency
     async_stats['result_latencies'].append(latency)
-    costmap=dict(np.load(directory/'costmap.npz',allow_pickle=False))
+    if prepared is None:raise RuntimeError('Model result files were not prepared')
+    costmap,labels,confidence=prepared
     map_sim_time=job['sim_time'];map_wall_time=job['wall_time']
     latest_map_directory=directory
     if path is not None:
@@ -476,7 +588,8 @@ def accept_response(response):
         if not known_route_clear(path[near:]):
             planning_requested=True;path=None;inputs()
     if perception_stale(elapsed,time.perf_counter(),map_sim_time,map_wall_time,args.max_perception_age):request_replan=True
-    labels=np.load(directory/'labels.npy',allow_pickle=False);confidence=np.load(directory/'confidence.npy',allow_pickle=False)
+    if lidar_view is not None and annotated is not None:
+        lidar_view.update_cameras(annotated[0],job['metadata']['simulation_timestamp_seconds'],predicted=True,single_snapshots=annotated[1])
     indices=np.argwhere((labels>0)&~np.isin(labels,[11,12,13,14])&(confidence>=.35))
     xyz=(indices+.5)*[.5,.5,.5]+[-50.,-50.,-5.]
     xyz=np.c_[xyz,np.ones(len(xyz))]@np.asarray(response['world_from_reference']).T
@@ -589,10 +702,16 @@ def known_route_clear(points):
 
 try:
     world.pause();wait_for('WORKER_READY')
-    # Initialize the six annotator graphs before reading them from normal renders.
-    for _,rp,_,_ in products:rp.hydra_texture.set_updates_enabled(True)
-    rep.orchestrator.step(delta_time=0.,rt_subframes=3,pause_timeline=True)
-    for _,rp,_,_ in products:rp.hydra_texture.set_updates_enabled(False)
+    if sensor_renderer is not None:
+        sensor_start=time.perf_counter()
+        while not sensor_renderer.ready.is_set():
+            if sensor_renderer.process.poll() is not None:raise RuntimeError('Sensor renderer exited; see '+str(OUT/'sensor_renderer.log'))
+            if time.perf_counter()-sensor_start>180:raise RuntimeError('Sensor renderer startup timeout')
+            app.update();time.sleep(.002)
+    else:
+        for _,rp,_,_ in products:rp.hydra_texture.set_updates_enabled(True)
+        rep.orchestrator.step(delta_time=0.,rt_subframes=3,pause_timeline=True)
+        for _,rp,_,_ in products:rp.hydra_texture.set_updates_enabled(False)
     rep.orchestrator.set_capture_on_play(False)
     world.play()
     block_injected=False;run_started=time.perf_counter();step_index=0
@@ -646,6 +765,7 @@ try:
             else:
                 placement_error=''
                 generation+=1;path=None;costmap=None;map_sim_time=map_wall_time=None;planning_requested=True;latest_map_directory=None
+                if lidar_view is not None:lidar_view.clear_cameras()
                 world.stop();inputs();lidar_history.reset();world.reset();lidar_history.enable();needs_sensor_step=True
                 car.GetAttribute('xformOp:translate').Set(Gf.Vec3d(*requested_position))
                 car.GetAttribute('xformOp:orient').Set(Gf.Quatf(math.cos(requested_yaw/2),0,0,math.sin(requested_yaw/2)))
@@ -662,6 +782,9 @@ try:
                 if args.pose_controls_test:
                     distance=math.hypot(actual[0]-TARGET[0],actual[1]-TARGET[1]);angle=abs((actual_yaw-desired_heading+math.pi)%(2*math.pi)-math.pi)
                     speed=0.;collision=overlaps(actual,actual_yaw,colliders);mode='stopped';break
+        if sensor_renderer is not None:
+            while not sensor_renderer.mailbox.empty():accept_sensor_response(sensor_renderer.mailbox.get_nowait())
+            if sensor_renderer.process.poll() is not None:raise RuntimeError('Sensor renderer exited; see '+str(OUT/'sensor_renderer.log'))
         while not mailbox.empty():
             line=mailbox.get_nowait()
             if line.startswith('WORKER_RESULT '):accept_response(json.loads(line[len('WORKER_RESULT '):]))
@@ -674,7 +797,8 @@ try:
         if pending and time.perf_counter()-pending['wall_time']>60:raise RuntimeError('Perception worker timeout')
         if args.block_at>=0 and not block_injected and elapsed>=args.block_at:
             add_block();block_injected=True
-        if mode in ('auto','no_safe_path') and not needs_sensor_step and pending is None and (request_replan or elapsed-last_capture>=1./args.prediction_hz):
+        capture_due=mode in ('auto','no_safe_path') and not needs_sensor_step and pending is None and (request_replan or elapsed-last_capture>=1./args.prediction_hz)
+        if capture_due:
             if request_replan:planning_requested=True
             request_replan=False
             submit_capture()
@@ -776,9 +900,11 @@ try:
             'perception_stale':stale,'pending_id':None if pending is None else pending['id'],
             'command':dict(last_command),'hold_reason':hold_reason,'planning_pending':planning_pending is not None,'destination_state':destination})
         if step_index%PHYSICS_HZ==0:
-            (OUT/'live_status.json').write_text(json.dumps({'t':elapsed,'position':list(p),'heading':heading,'speed':speed,
+            live_status=json.dumps({'t':elapsed,'position':list(p),'heading':heading,'speed':speed,
                 'mode':mode,'command':dict(last_command),'hold_reason':hold_reason,'planning_pending':planning_pending is not None,
-                'system_status':activity,'system_status_detail':activity_detail,'planning_elapsed_seconds':planning_seconds,'destination_state':destination}))
+                'system_status':activity,'system_status_detail':activity_detail,'planning_elapsed_seconds':planning_seconds,'destination_state':destination})
+            try:status_writes.put_nowait(live_status)
+            except queue.Full:pass
         age=0. if map_wall_time is None else time.perf_counter()-map_wall_time
         gear_text='R' if last_command['direction']<0 else 'D'
         status=f'NAVIGATE TO PARKING GOAL | {activity} | {gear_text} | {speed:+.2f} m/s | target {distance:.2f} m\nCamera age {age:.1f}s | throttle {last_command["throttle"]:.2f} | brake {last_command["brake"]:.2f}'
@@ -791,8 +917,10 @@ try:
             system_detail.text=activity_detail+(' '+placement_error if mode=='placement_blocked' else '')
             camera_age='not available' if map_wall_time is None else f'{age:.1f}s'
             system_telemetry.text=f'{gear_text} | Speed {speed:+.2f} m/s | Goal {distance:.2f} m\nCamera age: {camera_age}'
-        if (args.headless or (args.heading_change_test and slider_test_finished and queued_heading is None)) and ((mode=='collision_audit_stop' or (mode=='parked' and abs(speed)<.03) or (mode=='no_safe_path' and abs(speed)<.05)) or elapsed>args.max_sim_seconds):break
-        if capture_context is not None:UsdGeom.Imageable(debug).MakeInvisible()
+        if (args.headless or args.timing_test or (args.heading_change_test and slider_test_finished and queued_heading is None)) and ((mode=='collision_audit_stop' or (mode=='parked' and abs(speed)<.03) or (mode=='no_safe_path' and abs(speed)<.05)) or elapsed>args.max_sim_seconds):break
+        if pending is not None and pending.get('sensor_pending'):
+            async_stats['physics_steps_during_capture']+=1
+            if abs(speed)>.1:async_stats['moving_steps_during_capture']+=1
         world.step(render=step_index%2==0);elapsed+=1/PHYSICS_HZ;step_index+=1
         lidar_history.sample();needs_sensor_step=False
         if lidar_view is not None:lidar_view.update()
@@ -812,13 +940,13 @@ try:
         'pose_control_events':pose_control_events,'heading_events':heading_events,'desired_heading_deg':math.degrees(desired_heading),
         'final_speed_mps':None if args.capture_only else speed,
         'safety_mode':'LiDAR-assisted GaussianFormer3D driving; simulator localization',
-        'async_mode':not args.synchronous,'capture_mode':'synchronized RGB/LiDAR snapshots','async_metrics':async_stats,
+        'async_mode':not args.synchronous,'capture_mode':'synchronized RGB/LiDAR snapshots' if args.synchronous else 'isolated renderer; synchronized frozen-pose RGB/LiDAR snapshots','async_metrics':async_stats,
         'controller_hz':PHYSICS_HZ,'viewport_target_hz':PHYSICS_HZ//2,
         'target_prediction_hz':args.prediction_hz,
         'parking_spot':selected_spot,
         'parking_mode':parking_mode,
         'camera_resolution':products[0][0]['resolution'],'cruising_speed_cap_mps':cap,
-        'asynchronous_rendering':False,'camera_batch_size':6,
+        'asynchronous_rendering':sensor_renderer is not None,'camera_batch_size':6,
         'peak_speed_mps':max((abs(q['speed']) for q in trajectory),default=0.),
         'run_wall_seconds':time.perf_counter()-run_started,'heading_slider_test_finished':slider_test_finished}
     (OUT/'result.json').write_text(json.dumps(report,indent=2));stage.GetRootLayer().Export(str(OUT/'scene.usda'))
@@ -849,6 +977,7 @@ except Exception:
     raise
 finally:
     inputs();world.stop()
+    if sensor_renderer is not None:sensor_renderer.close()
     for process in (worker,planner_process):
         if process.poll() is None:
             try:
